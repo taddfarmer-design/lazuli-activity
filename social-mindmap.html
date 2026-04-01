@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Social Circle Mind Map</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: #0f0f1a;
+    color: #e0e0f0;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── Top toolbar ── */
+  #toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    background: rgba(255,255,255,0.04);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    flex-shrink: 0;
+    flex-wrap: wrap;
+  }
+
+  #toolbar h1 {
+    font-size: 15px;
+    font-weight: 700;
+    color: #a78bfa;
+    letter-spacing: 0.5px;
+    margin-right: 6px;
+    white-space: nowrap;
+  }
+
+  .tb-sep { width: 1px; height: 28px; background: rgba(255,255,255,0.12); }
+
+  .tb-btn {
+    display: flex; align-items: center; gap: 6px;
+    padding: 6px 12px;
+    border: none; border-radius: 8px; cursor: pointer;
+    font-size: 13px; font-weight: 600;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .tb-btn:hover { transform: translateY(-1px); filter: brightness(1.15); }
+  .tb-btn:active { transform: translateY(0); }
+
+  .btn-add    { background: #7c3aed; color: #fff; }
+  .btn-connect { background: #0e7490; color: #fff; }
+  .btn-connect.active { background: #06b6d4; box-shadow: 0 0 0 2px #a5f3fc; }
+  .btn-clear  { background: #991b1b; color: #fff; }
+  .btn-reset  { background: #374151; color: #d1d5db; }
+
+  /* ── Canvas area ── */
+  #canvas-wrap {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    cursor: default;
+  }
+
+  svg#map {
+    width: 100%; height: 100%;
+    display: block;
+  }
+
+  /* SVG elements */
+  .link {
+    stroke-width: 2;
+    stroke-opacity: 0.55;
+    fill: none;
+    transition: stroke-opacity 0.2s;
+  }
+  .link:hover { stroke-opacity: 1; }
+  .link-label {
+    font-size: 11px;
+    fill: rgba(255,255,255,0.55);
+    pointer-events: none;
+    user-select: none;
+  }
+
+  .node-group { cursor: grab; }
+  .node-group:active { cursor: grabbing; }
+
+  .node-circle {
+    stroke-width: 2.5;
+    transition: filter 0.15s, r 0.15s;
+    filter: drop-shadow(0 2px 8px rgba(0,0,0,0.5));
+  }
+  .node-group:hover .node-circle { filter: drop-shadow(0 0 12px currentColor) brightness(1.2); }
+  .node-selected .node-circle { stroke-width: 4; }
+
+  .node-label {
+    font-size: 12px;
+    font-weight: 600;
+    fill: #fff;
+    text-anchor: middle;
+    pointer-events: none;
+    user-select: none;
+    dominant-baseline: middle;
+  }
+  .node-sub {
+    font-size: 10px;
+    fill: rgba(255,255,255,0.6);
+    text-anchor: middle;
+    pointer-events: none;
+    user-select: none;
+    dominant-baseline: middle;
+  }
+
+  /* ── Modals ── */
+  .overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.65);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 100;
+    backdrop-filter: blur(4px);
+  }
+  .overlay.hidden { display: none; }
+
+  .modal {
+    background: #1e1b2e;
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 16px;
+    padding: 28px;
+    width: 340px;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.6);
+  }
+  .modal h2 { font-size: 17px; margin-bottom: 18px; color: #c4b5fd; }
+
+  .form-row { margin-bottom: 14px; }
+  .form-row label { display: block; font-size: 12px; color: #9ca3af; margin-bottom: 5px; }
+  .form-row input, .form-row select, .form-row textarea {
+    width: 100%;
+    background: #12101f;
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 8px;
+    color: #e0e0f0;
+    font-size: 14px;
+    padding: 8px 11px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .form-row input:focus, .form-row select:focus, .form-row textarea:focus {
+    border-color: #7c3aed;
+  }
+  .form-row textarea { resize: vertical; min-height: 60px; font-family: inherit; }
+
+  .color-picker { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+  .color-swatch {
+    width: 26px; height: 26px; border-radius: 50%; cursor: pointer;
+    border: 2px solid transparent;
+    transition: transform 0.15s, border-color 0.15s;
+  }
+  .color-swatch:hover { transform: scale(1.15); }
+  .color-swatch.selected { border-color: #fff; transform: scale(1.1); }
+
+  .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+  .modal-actions button {
+    flex: 1; padding: 9px; border: none; border-radius: 9px;
+    font-size: 14px; font-weight: 600; cursor: pointer; transition: filter 0.15s;
+  }
+  .modal-actions button:hover { filter: brightness(1.12); }
+  .btn-save   { background: #7c3aed; color: #fff; }
+  .btn-cancel { background: #374151; color: #d1d5db; }
+  .btn-delete { background: #991b1b; color: #fff; }
+
+  /* ── Context menu ── */
+  #ctx-menu {
+    position: fixed;
+    background: #1e1b2e;
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 10px;
+    padding: 6px;
+    min-width: 160px;
+    z-index: 200;
+    box-shadow: 0 12px 32px rgba(0,0,0,0.5);
+  }
+  #ctx-menu.hidden { display: none; }
+  .ctx-item {
+    padding: 8px 12px;
+    border-radius: 7px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.12s;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .ctx-item:hover { background: rgba(255,255,255,0.08); }
+  .ctx-item.danger { color: #f87171; }
+  .ctx-sep { height: 1px; background: rgba(255,255,255,0.08); margin: 4px 0; }
+
+  /* ── Legend ── */
+  #legend {
+    position: absolute;
+    bottom: 14px; right: 14px;
+    background: rgba(15,15,26,0.85);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-size: 12px;
+    backdrop-filter: blur(6px);
+    pointer-events: none;
+  }
+  #legend h3 { font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px; }
+  .legend-row { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; color: #d1d5db; }
+  .legend-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+
+  /* ── Hint bar ── */
+  #hint {
+    position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%);
+    background: rgba(15,15,26,0.85);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 20px;
+    padding: 7px 16px;
+    font-size: 12px; color: #6b7280;
+    backdrop-filter: blur(6px);
+    pointer-events: none;
+    white-space: nowrap;
+  }
+
+  /* ── Zoom controls ── */
+  #zoom-btns {
+    position: absolute; top: 14px; right: 14px;
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .zoom-btn {
+    width: 32px; height: 32px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    color: #d1d5db; font-size: 16px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .zoom-btn:hover { background: rgba(255,255,255,0.12); }
+
+  /* ── Node count badge ── */
+  #stats {
+    position: absolute; top: 14px; left: 14px;
+    background: rgba(15,15,26,0.85);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 20px;
+    padding: 5px 12px;
+    font-size: 12px; color: #6b7280;
+    backdrop-filter: blur(6px);
+    pointer-events: none;
+  }
+  #stats span { color: #a78bfa; font-weight: 700; }
+</style>
+</head>
+<body>
+
+<!-- Toolbar -->
+<div id="toolbar">
+  <h1>🗺 Social Circle</h1>
+  <div class="tb-sep"></div>
+  <button class="tb-btn btn-add" onclick="openAddModal()">＋ Add Person</button>
+  <button class="tb-btn btn-connect" id="connectBtn" onclick="toggleConnectMode()">⟷ Connect</button>
+  <div class="tb-sep"></div>
+  <button class="tb-btn btn-reset" onclick="resetView()">⌖ Reset View</button>
+  <button class="tb-btn btn-clear" onclick="confirmClear()">✕ Clear All</button>
+</div>
+
+<!-- Canvas -->
+<div id="canvas-wrap">
+  <svg id="map">
+    <defs>
+      <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+        <path d="M0,0 L0,6 L8,3 z" fill="rgba(255,255,255,0.3)"/>
+      </marker>
+      <filter id="glow">
+        <feGaussianBlur stdDeviation="3" result="blur"/>
+        <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+    </defs>
+    <g id="links-layer"></g>
+    <g id="nodes-layer"></g>
+  </svg>
+
+  <!-- Overlays -->
+  <div id="zoom-btns">
+    <div class="zoom-btn" onclick="zoom(1.2)">＋</div>
+    <div class="zoom-btn" onclick="zoom(0.833)">－</div>
+  </div>
+  <div id="stats">People: <span id="node-count">0</span> · Connections: <span id="link-count">0</span></div>
+  <div id="legend">
+    <h3>Categories</h3>
+    <div class="legend-row"><div class="legend-dot" style="background:#a78bfa"></div>You</div>
+    <div class="legend-row"><div class="legend-dot" style="background:#f472b6"></div>Family</div>
+    <div class="legend-row"><div class="legend-dot" style="background:#34d399"></div>Friend</div>
+    <div class="legend-row"><div class="legend-dot" style="background:#60a5fa"></div>Work</div>
+    <div class="legend-row"><div class="legend-dot" style="background:#fbbf24"></div>Acquaintance</div>
+    <div class="legend-row"><div class="legend-dot" style="background:#fb923c"></div>Romantic</div>
+    <div class="legend-row"><div class="legend-dot" style="background:#94a3b8"></div>Other</div>
+  </div>
+  <div id="hint">Double-click canvas to add · Drag nodes to move · Right-click to edit/delete</div>
+</div>
+
+<!-- Context Menu -->
+<div id="ctx-menu" class="hidden">
+  <div class="ctx-item" onclick="ctxEdit()">✏️ Edit</div>
+  <div class="ctx-item" onclick="ctxConnect()">⟷ Connect to…</div>
+  <div class="ctx-sep"></div>
+  <div class="ctx-item danger" onclick="ctxDelete()">🗑 Delete</div>
+</div>
+
+<!-- Add / Edit Modal -->
+<div id="add-overlay" class="overlay hidden" onclick="closeModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h2 id="modal-title">Add Person</h2>
+    <div class="form-row">
+      <label>Name *</label>
+      <input id="f-name" type="text" placeholder="e.g. Alex Chen" maxlength="30">
+    </div>
+    <div class="form-row">
+      <label>Role / Relationship</label>
+      <input id="f-role" type="text" placeholder="e.g. Best friend, Manager…" maxlength="40">
+    </div>
+    <div class="form-row">
+      <label>Category</label>
+      <select id="f-cat">
+        <option value="family">Family</option>
+        <option value="friend" selected>Friend</option>
+        <option value="work">Work</option>
+        <option value="acquaintance">Acquaintance</option>
+        <option value="romantic">Romantic</option>
+        <option value="other">Other</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <label>Note (optional)</label>
+      <textarea id="f-note" placeholder="Any quick note about this person…"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeAddModal()">Cancel</button>
+      <button id="modal-delete-btn" class="btn-delete hidden" onclick="deleteCurrentNode()">Delete</button>
+      <button class="btn-save" onclick="saveNode()">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─────────────────────────────────────────────
+//  State
+// ─────────────────────────────────────────────
+const CAT_COLORS = {
+  you:          '#a78bfa',
+  family:       '#f472b6',
+  friend:       '#34d399',
+  work:         '#60a5fa',
+  acquaintance: '#fbbf24',
+  romantic:     '#fb923c',
+  other:        '#94a3b8',
+};
+
+let nodes = [];
+let links = [];
+let nextId = 1;
+
+let viewTx = 0, viewTy = 0, viewScale = 1;
+let isPanning = false, panStart = null;
+
+let isDragging = false, dragNode = null, dragOffset = {x:0,y:0};
+
+let connectMode = false, connectSource = null;
+
+let ctxNodeId = null;
+let editingNodeId = null;
+
+// ─────────────────────────────────────────────
+//  Init: create "You" center node
+// ─────────────────────────────────────────────
+const svgEl = document.getElementById('map');
+const linksLayer = document.getElementById('links-layer');
+const nodesLayer = document.getElementById('nodes-layer');
+const ctxMenu = document.getElementById('ctx-menu');
+
+function getCenter() {
+  const r = svgEl.getBoundingClientRect();
+  return { x: r.width/2, y: r.height/2 };
+}
+
+function init() {
+  const c = getCenter();
+  addNode({ id: 0, name: 'You', role: 'Center', cat: 'you', note: '', x: c.x, y: c.y, locked: true });
+  updateStats();
+}
+
+// ─────────────────────────────────────────────
+//  Node management
+// ─────────────────────────────────────────────
+function addNode(data) {
+  nodes.push(data);
+  renderNode(data);
+}
+
+function renderNode(n) {
+  const r = n.cat === 'you' ? 36 : 30;
+  const color = CAT_COLORS[n.cat] || '#94a3b8';
+  const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+  g.setAttribute('class','node-group');
+  g.dataset.id = n.id;
+  g.setAttribute('transform', toTransform(n.x, n.y));
+
+  // Circle
+  const circle = document.createElementNS('http://www.w3.org/2000/svg','circle');
+  circle.setAttribute('r', r);
+  circle.setAttribute('fill', color + '22');
+  circle.setAttribute('stroke', color);
+  circle.setAttribute('class','node-circle');
+  circle.style.color = color;
+  g.appendChild(circle);
+
+  // Initials ring
+  const initCircle = document.createElementNS('http://www.w3.org/2000/svg','circle');
+  initCircle.setAttribute('r', r - 8);
+  initCircle.setAttribute('fill', color + '33');
+  g.appendChild(initCircle);
+
+  // Initials
+  const initText = document.createElementNS('http://www.w3.org/2000/svg','text');
+  initText.setAttribute('class','node-label');
+  initText.setAttribute('dy','0');
+  initText.textContent = initials(n.name);
+  initText.style.fontSize = n.cat==='you' ? '14px' : '12px';
+  g.appendChild(initText);
+
+  // Name below
+  const nameText = document.createElementNS('http://www.w3.org/2000/svg','text');
+  nameText.setAttribute('class','node-sub');
+  nameText.setAttribute('dy', r + 14);
+  nameText.textContent = truncate(n.name, 14);
+  g.appendChild(nameText);
+
+  // Role below name
+  if (n.role && n.cat !== 'you') {
+    const roleText = document.createElementNS('http://www.w3.org/2000/svg','text');
+    roleText.setAttribute('class','node-sub');
+    roleText.setAttribute('dy', r + 26);
+    roleText.style.fill = 'rgba(255,255,255,0.35)';
+    roleText.style.fontSize = '9px';
+    roleText.textContent = truncate(n.role, 16);
+    g.appendChild(roleText);
+  }
+
+  // Events
+  g.addEventListener('mousedown', onNodeMouseDown);
+  g.addEventListener('click', onNodeClick);
+  g.addEventListener('contextmenu', onNodeContextMenu);
+  g.addEventListener('dblclick', onNodeDblClick);
+
+  nodesLayer.appendChild(g);
+}
+
+function updateNodeVisual(id) {
+  const el = document.querySelector(`[data-id="${id}"]`);
+  if (el) el.remove();
+  const n = nodes.find(n=>n.id===id);
+  if (n) renderNode(n);
+}
+
+// ─────────────────────────────────────────────
+//  Links
+// ─────────────────────────────────────────────
+function addLink(sourceId, targetId, label='') {
+  // prevent duplicates
+  if (links.find(l=>(l.s===sourceId&&l.t===targetId)||(l.s===targetId&&l.t===sourceId))) return;
+  const id = `l${sourceId}-${targetId}`;
+  links.push({ id, s: sourceId, t: targetId, label });
+  renderLink(id);
+  updateStats();
+}
+
+function renderLink(id) {
+  const existing = document.getElementById(id);
+  if (existing) existing.remove();
+
+  const lk = links.find(l=>l.id===id);
+  if (!lk) return;
+  const s = nodes.find(n=>n.id===lk.s);
+  const t = nodes.find(n=>n.id===lk.t);
+  if (!s||!t) return;
+
+  const color = blendColors(CAT_COLORS[s.cat]||'#94a3b8', CAT_COLORS[t.cat]||'#94a3b8');
+
+  const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+  g.id = id;
+
+  const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+  path.setAttribute('class','link');
+  path.setAttribute('stroke', color);
+  path.setAttribute('d', curvePath(s.x, s.y, t.x, t.y));
+  g.appendChild(path);
+
+  if (lk.label) {
+    const mid = midPoint(s.x, s.y, t.x, t.y);
+    const txt = document.createElementNS('http://www.w3.org/2000/svg','text');
+    txt.setAttribute('class','link-label');
+    txt.setAttribute('x', mid.x);
+    txt.setAttribute('y', mid.y - 6);
+    txt.setAttribute('text-anchor','middle');
+    txt.textContent = lk.label;
+    g.appendChild(txt);
+  }
+
+  linksLayer.appendChild(g);
+}
+
+function updateLinksFor(nodeId) {
+  links.filter(l=>l.s===nodeId||l.t===nodeId).forEach(l=>renderLink(l.id));
+}
+
+// ─────────────────────────────────────────────
+//  Drag
+// ─────────────────────────────────────────────
+function onNodeMouseDown(e) {
+  if (e.button !== 0) return;
+  e.stopPropagation();
+  const id = +e.currentTarget.dataset.id;
+  const n = nodes.find(n=>n.id===id);
+  if (!n) return;
+
+  if (connectMode) return; // handled in click
+
+  isDragging = false;
+  dragNode = n;
+  const svgPt = clientToSVG(e.clientX, e.clientY);
+  dragOffset = { x: svgPt.x - n.x, y: svgPt.y - n.y };
+
+  window.addEventListener('mousemove', onDragMove);
+  window.addEventListener('mouseup', onDragEnd);
+}
+
+function onDragMove(e) {
+  if (!dragNode) return;
+  isDragging = true;
+  const svgPt = clientToSVG(e.clientX, e.clientY);
+  dragNode.x = svgPt.x - dragOffset.x;
+  dragNode.y = svgPt.y - dragOffset.y;
+  const el = document.querySelector(`[data-id="${dragNode.id}"]`);
+  if (el) el.setAttribute('transform', toTransform(dragNode.x, dragNode.y));
+  updateLinksFor(dragNode.id);
+}
+
+function onDragEnd() {
+  dragNode = null;
+  window.removeEventListener('mousemove', onDragMove);
+  window.removeEventListener('mouseup', onDragEnd);
+  setTimeout(()=>{ isDragging = false; }, 50);
+}
+
+// ─────────────────────────────────────────────
+//  Click / context menu
+// ─────────────────────────────────────────────
+function onNodeClick(e) {
+  if (isDragging) return;
+  e.stopPropagation();
+  const id = +e.currentTarget.dataset.id;
+  if (connectMode) {
+    if (connectSource === null) {
+      connectSource = id;
+      highlightNode(id, true);
+      document.getElementById('hint').textContent = 'Now click a second person to connect them…';
+    } else if (connectSource !== id) {
+      addLink(connectSource, id);
+      highlightNode(connectSource, false);
+      connectSource = null;
+      document.getElementById('hint').textContent = 'Connection made! Click another node or press Connect again to exit.';
+    }
+  }
+}
+
+function onNodeDblClick(e) {
+  e.stopPropagation();
+  const id = +e.currentTarget.dataset.id;
+  const n = nodes.find(n=>n.id===id);
+  if (!n || n.locked) return;
+  openEditModal(id);
+}
+
+function onNodeContextMenu(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  const id = +e.currentTarget.dataset.id;
+  ctxNodeId = id;
+  showCtxMenu(e.clientX, e.clientY);
+}
+
+function showCtxMenu(x, y) {
+  ctxMenu.style.left = x + 'px';
+  ctxMenu.style.top  = y + 'px';
+  ctxMenu.classList.remove('hidden');
+}
+function hideCtxMenu() { ctxMenu.classList.add('hidden'); }
+
+function ctxEdit() {
+  hideCtxMenu();
+  const n = nodes.find(n=>n.id===ctxNodeId);
+  if (!n || n.locked) return;
+  openEditModal(ctxNodeId);
+}
+
+function ctxConnect() {
+  hideCtxMenu();
+  if (!connectMode) toggleConnectMode();
+  connectSource = ctxNodeId;
+  highlightNode(ctxNodeId, true);
+  document.getElementById('hint').textContent = 'Now click a second person to connect them…';
+}
+
+function ctxDelete() {
+  hideCtxMenu();
+  const n = nodes.find(n=>n.id===ctxNodeId);
+  if (!n || n.locked) { alert("The 'You' node cannot be deleted."); return; }
+  deleteNode(ctxNodeId);
+}
+
+// ─────────────────────────────────────────────
+//  Pan & Zoom
+// ─────────────────────────────────────────────
+const canvasWrap = document.getElementById('canvas-wrap');
+
+canvasWrap.addEventListener('mousedown', e=>{
+  if (e.button===1 || (e.button===0 && !e.target.closest('.node-group'))) {
+    isPanning = true;
+    panStart = { x: e.clientX - viewTx, y: e.clientY - viewTy };
+    svgEl.style.cursor = 'grabbing';
+  }
+});
+window.addEventListener('mousemove', e=>{
+  if (!isPanning) return;
+  viewTx = e.clientX - panStart.x;
+  viewTy = e.clientY - panStart.y;
+  applyView();
+});
+window.addEventListener('mouseup', ()=>{ isPanning = false; svgEl.style.cursor='default'; });
+
+svgEl.addEventListener('wheel', e=>{
+  e.preventDefault();
+  const factor = e.deltaY < 0 ? 1.1 : 0.91;
+  const rect = svgEl.getBoundingClientRect();
+  const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+  viewTx = mx - (mx - viewTx) * factor;
+  viewTy = my - (my - viewTy) * factor;
+  viewScale *= factor;
+  applyView();
+}, {passive:false});
+
+svgEl.addEventListener('dblclick', e=>{
+  if (e.target.closest('.node-group')) return;
+  openAddModalAt(e.clientX, e.clientY);
+});
+
+function applyView() {
+  linksLayer.setAttribute('transform', `translate(${viewTx},${viewTy}) scale(${viewScale})`);
+  nodesLayer.setAttribute('transform', `translate(${viewTx},${viewTy}) scale(${viewScale})`);
+}
+
+function zoom(factor) {
+  const rect = svgEl.getBoundingClientRect();
+  const cx = rect.width/2, cy = rect.height/2;
+  viewTx = cx - (cx - viewTx) * factor;
+  viewTy = cy - (cy - viewTy) * factor;
+  viewScale *= factor;
+  applyView();
+}
+
+function resetView() {
+  viewTx = 0; viewTy = 0; viewScale = 1;
+  applyView();
+}
+
+function clientToSVG(cx, cy) {
+  const rect = svgEl.getBoundingClientRect();
+  return {
+    x: (cx - rect.left - viewTx) / viewScale,
+    y: (cy - rect.top  - viewTy) / viewScale,
+  };
+}
+
+// ─────────────────────────────────────────────
+//  Connect mode
+// ─────────────────────────────────────────────
+function toggleConnectMode() {
+  connectMode = !connectMode;
+  const btn = document.getElementById('connectBtn');
+  if (connectMode) {
+    btn.classList.add('active');
+    btn.textContent = '✕ Stop Connecting';
+    document.getElementById('hint').textContent = 'Click a person to start a connection…';
+  } else {
+    btn.classList.remove('active');
+    btn.textContent = '⟷ Connect';
+    document.getElementById('hint').textContent = 'Double-click canvas to add · Drag nodes to move · Right-click to edit/delete';
+    if (connectSource !== null) { highlightNode(connectSource, false); connectSource = null; }
+  }
+}
+
+function highlightNode(id, on) {
+  const el = document.querySelector(`[data-id="${id}"]`);
+  if (el) el.classList.toggle('node-selected', on);
+}
+
+// ─────────────────────────────────────────────
+//  Modal
+// ─────────────────────────────────────────────
+let pendingX = null, pendingY = null;
+
+function openAddModal() {
+  const c = getCenter();
+  const angle = Math.random() * Math.PI * 2;
+  const dist = 130 + Math.random()*80;
+  pendingX = c.x + Math.cos(angle)*dist;
+  pendingY = c.y + Math.sin(angle)*dist;
+  editingNodeId = null;
+  document.getElementById('modal-title').textContent = 'Add Person';
+  clearForm();
+  document.getElementById('modal-delete-btn').classList.add('hidden');
+  document.getElementById('add-overlay').classList.remove('hidden');
+  setTimeout(()=>document.getElementById('f-name').focus(), 50);
+}
+
+function openAddModalAt(clientX, clientY) {
+  const pt = clientToSVG(clientX, clientY);
+  pendingX = pt.x; pendingY = pt.y;
+  editingNodeId = null;
+  document.getElementById('modal-title').textContent = 'Add Person';
+  clearForm();
+  document.getElementById('modal-delete-btn').classList.add('hidden');
+  document.getElementById('add-overlay').classList.remove('hidden');
+  setTimeout(()=>document.getElementById('f-name').focus(), 50);
+}
+
+function openEditModal(id) {
+  editingNodeId = id;
+  const n = nodes.find(n=>n.id===id);
+  document.getElementById('modal-title').textContent = 'Edit Person';
+  document.getElementById('f-name').value = n.name;
+  document.getElementById('f-role').value = n.role || '';
+  document.getElementById('f-cat').value = n.cat;
+  document.getElementById('f-note').value = n.note || '';
+  document.getElementById('modal-delete-btn').classList.remove('hidden');
+  document.getElementById('add-overlay').classList.remove('hidden');
+  setTimeout(()=>document.getElementById('f-name').focus(), 50);
+}
+
+function clearForm() {
+  document.getElementById('f-name').value = '';
+  document.getElementById('f-role').value = '';
+  document.getElementById('f-cat').value = 'friend';
+  document.getElementById('f-note').value = '';
+}
+
+function closeAddModal() {
+  document.getElementById('add-overlay').classList.add('hidden');
+  editingNodeId = null;
+}
+
+function closeModal(e) {
+  if (e.target.id === 'add-overlay') closeAddModal();
+}
+
+function saveNode() {
+  const name = document.getElementById('f-name').value.trim();
+  if (!name) { document.getElementById('f-name').focus(); return; }
+
+  const data = {
+    name,
+    role: document.getElementById('f-role').value.trim(),
+    cat:  document.getElementById('f-cat').value,
+    note: document.getElementById('f-note').value.trim(),
+  };
+
+  if (editingNodeId !== null) {
+    const n = nodes.find(n=>n.id===editingNodeId);
+    Object.assign(n, data);
+    updateNodeVisual(n.id);
+    updateLinksFor(n.id);
+  } else {
+    const id = nextId++;
+    const newNode = { id, x: pendingX, y: pendingY, locked: false, ...data };
+    addNode(newNode);
+    // Auto-link to "You" (node 0)
+    addLink(0, id);
+    updateStats();
+  }
+  closeAddModal();
+}
+
+function deleteCurrentNode() {
+  if (editingNodeId !== null) {
+    closeAddModal();
+    deleteNode(editingNodeId);
+  }
+}
+
+function deleteNode(id) {
+  const el = document.querySelector(`[data-id="${id}"]`);
+  if (el) el.remove();
+  nodes = nodes.filter(n=>n.id!==id);
+  const toRemove = links.filter(l=>l.s===id||l.t===id);
+  toRemove.forEach(l=>{ const el=document.getElementById(l.id); if(el)el.remove(); });
+  links = links.filter(l=>l.s!==id&&l.t!==id);
+  updateStats();
+}
+
+function confirmClear() {
+  if (nodes.length <= 1) return;
+  if (!confirm('Remove all people and connections? (Your "You" node will remain.)')) return;
+  nodes.filter(n=>n.id!==0).forEach(n=>{
+    const el = document.querySelector(`[data-id="${n.id}"]`);
+    if (el) el.remove();
+  });
+  nodes = nodes.filter(n=>n.id===0);
+  links.forEach(l=>{ const el=document.getElementById(l.id); if(el)el.remove(); });
+  links = [];
+  updateStats();
+}
+
+// ─────────────────────────────────────────────
+//  Stats
+// ─────────────────────────────────────────────
+function updateStats() {
+  document.getElementById('node-count').textContent = nodes.length - 1;
+  document.getElementById('link-count').textContent = links.length;
+}
+
+// ─────────────────────────────────────────────
+//  Utilities
+// ─────────────────────────────────────────────
+function toTransform(x,y) { return `translate(${x},${y})`; }
+
+function initials(name) {
+  const parts = name.trim().split(/\s+/);
+  return parts.length >= 2
+    ? (parts[0][0] + parts[1][0]).toUpperCase()
+    : name.slice(0,2).toUpperCase();
+}
+
+function truncate(str, n) { return str.length > n ? str.slice(0,n-1)+'…' : str; }
+
+function curvePath(x1,y1,x2,y2) {
+  const mx = (x1+x2)/2, my = (y1+y2)/2;
+  const dx = x2-x1, dy = y2-y1;
+  const cx = mx - dy*0.15, cy = my + dx*0.15;
+  return `M${x1},${y1} Q${cx},${cy} ${x2},${y2}`;
+}
+
+function midPoint(x1,y1,x2,y2) { return { x:(x1+x2)/2, y:(y1+y2)/2 }; }
+
+function blendColors(c1, c2) {
+  // Simple alpha blend returning c1 tinted
+  return c1;
+}
+
+// ─────────────────────────────────────────────
+//  Global clicks (close menus)
+// ─────────────────────────────────────────────
+document.addEventListener('click', ()=> hideCtxMenu());
+document.addEventListener('keydown', e=>{
+  if (e.key === 'Escape') {
+    hideCtxMenu();
+    if (connectMode) toggleConnectMode();
+    closeAddModal();
+  }
+});
+
+// ─────────────────────────────────────────────
+//  Demo data
+// ─────────────────────────────────────────────
+function loadDemo() {
+  const c = getCenter();
+  const demoNodes = [
+    { name:'Mom',      role:'Mother',         cat:'family',       x: c.x-160, y: c.y-120 },
+    { name:'Dad',      role:'Father',         cat:'family',       x: c.x-220, y: c.y+20  },
+    { name:'Jordan',   role:'Best friend',    cat:'friend',       x: c.x+60,  y: c.y-170 },
+    { name:'Sam',      role:'College buddy',  cat:'friend',       x: c.x+190, y: c.y-60  },
+    { name:'Riley',    role:'Neighbor',       cat:'acquaintance', x: c.x+160, y: c.y+130 },
+    { name:'Alex',     role:'Manager',        cat:'work',         x: c.x-60,  y: c.y+175 },
+    { name:'Morgan',   role:'Colleague',      cat:'work',         x: c.x-200, y: c.y+140 },
+    { name:'Taylor',   role:'Partner',        cat:'romantic',     x: c.x+10,  y: c.y-250 },
+  ];
+  demoNodes.forEach(d=>{
+    const id = nextId++;
+    addNode({ id, locked:false, note:'', ...d });
+    addLink(0, id);
+  });
+  // Extra connections
+  addLink(1, 2);    // Mom ↔ Dad
+  addLink(3, 4);    // Jordan ↔ Sam
+  addLink(6, 7);    // Alex ↔ Morgan
+  updateStats();
+}
+
+// ─────────────────────────────────────────────
+//  Start
+// ─────────────────────────────────────────────
+window.addEventListener('load', ()=>{
+  init();
+  loadDemo();
+});
+</script>
+</body>
+</html>
