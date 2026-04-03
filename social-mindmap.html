@@ -549,7 +549,6 @@ function renderMap() {
           node.y = cur.y + (e.key === 'ArrowDown'  ? NUDGE : e.key === 'ArrowUp'   ? -NUDGE : 0);
           renderMap();
           saveState();
-          // Re-focus the moved node
           requestAnimationFrame(() => {
             const moved = document.querySelector(`[data-section="${key}"][data-index="${i}"]`);
             if (moved) moved.focus();
