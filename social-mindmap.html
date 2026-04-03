@@ -202,8 +202,9 @@
       overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap;
     }
 
-    /* ── SVG node hover ───────────────────────────── */
-    .conn-node { cursor: default; }
+    /* ── SVG node hover / drag ────────────────────── */
+    .conn-node { cursor: grab; }
+    .conn-node:active { cursor: grabbing; }
     .conn-node:focus { outline: none; }
     .conn-node:focus .node-circle,
     .conn-node:hover .node-circle {
@@ -213,6 +214,8 @@
     .node-delete { cursor: pointer; opacity: 0; transition: opacity 0.15s; }
     .conn-node:hover .node-delete,
     .conn-node:focus .node-delete { opacity: 1; }
+    /* Suppress grab cursor on the delete button itself */
+    .node-delete { cursor: pointer !important; }
   </style>
 </head>
 <body>
@@ -245,24 +248,6 @@
     <!-- Background -->
     <rect width="800" height="800" fill="#F7F7F7"/>
 
-    <!-- Section fills -->
-    <path id="fill-personal"  fill="#E4F3F9" opacity="0.85"/>
-    <path id="fill-work"      fill="#B1D6E3" opacity="0.6"/>
-    <path id="fill-learning"  fill="#cce5f0" opacity="0.6"/>
-
-    <!-- Divider lines -->
-    <line id="div-0" stroke="#C8DDE8" stroke-width="1.5" stroke-dasharray="6 4"/>
-    <line id="div-1" stroke="#C8DDE8" stroke-width="1.5" stroke-dasharray="6 4"/>
-    <line id="div-2" stroke="#C8DDE8" stroke-width="1.5" stroke-dasharray="6 4"/>
-
-    <!-- Section labels -->
-    <text id="lbl-personal" text-anchor="middle" font-family="Arial,Helvetica,sans-serif"
-          font-size="16" font-weight="700" fill="#035271" opacity="0.55" pointer-events="none"/>
-    <text id="lbl-work"     text-anchor="middle" font-family="Arial,Helvetica,sans-serif"
-          font-size="16" font-weight="700" fill="#1280b0" opacity="0.65" pointer-events="none"/>
-    <text id="lbl-learning" text-anchor="middle" font-family="Arial,Helvetica,sans-serif"
-          font-size="16" font-weight="700" fill="#0a6e8a" opacity="0.65" pointer-events="none"/>
-
     <!-- Connections (lines) -->
     <g id="g-lines"></g>
 
@@ -288,19 +273,25 @@
 <!-- ── LEGEND ──────────────────────────────────────── -->
 <div class="legend" aria-label="Map legend">
   <div class="legend-item">
-    <div class="legend-dot" style="background:#035271"></div>
+    <svg width="32" height="14" aria-hidden="true">
+      <line x1="0" y1="7" x2="32" y2="7" stroke="#035271" stroke-width="3"/>
+    </svg>
     <span>Personal</span>
   </div>
   <div class="legend-item">
-    <div class="legend-dot" style="background:#1280b0"></div>
+    <svg width="32" height="14" aria-hidden="true">
+      <line x1="0" y1="7" x2="32" y2="7" stroke="#1280b0" stroke-width="3" stroke-dasharray="8 4"/>
+    </svg>
     <span>Work / Community</span>
   </div>
   <div class="legend-item">
-    <div class="legend-dot" style="background:#0a6e8a"></div>
+    <svg width="32" height="14" aria-hidden="true">
+      <line x1="0" y1="7" x2="32" y2="7" stroke="#0a6e8a" stroke-width="3" stroke-dasharray="3 4"/>
+    </svg>
     <span>Learning</span>
   </div>
   <div class="legend-item" style="color:#999">
-    <span>Hover a node to reveal the &times; button &nbsp;·&nbsp; Tab to navigate &nbsp;·&nbsp; Delete key to remove</span>
+    <span>Drag nodes to arrange &nbsp;·&nbsp; Hover to reveal &times; &nbsp;·&nbsp; Delete key to remove</span>
   </div>
 </div>
 
@@ -349,34 +340,29 @@
 ───────────────────────────────────────────────── */
 const CX = 400, CY = 400;
 const R_CENTER  = 52;
-const R_INNER   = R_CENTER + 10;   // gap between center and sector fills
-const R_OUTER   = 368;
 const TO_RAD    = Math.PI / 180;
 
 const SECTIONS = {
   personal: {
     start: -90, end: 30,
     nodeColor: '#035271',
-    fillId:    'fill-personal',
-    labelId:   'lbl-personal',
+    lineDash:  '',               // solid
     label:     'Personal',
-    suggestions: ['Friend','Family','Partner','Neighbor','Mentor','Peer','Sibling','Parent']
+    suggestions: ['Friend','Family','Neighbor','Colleague','Manager','Instructor','Mentor']
   },
   work: {
     start: 30, end: 150,
     nodeColor: '#1280b0',
-    fillId:    'fill-work',
-    labelId:   'lbl-work',
+    lineDash:  '10 6',           // dashed
     label:     'Work / Community',
-    suggestions: ['Colleague','Manager','Client','Volunteer','Community Member','Teammate','Sponsor','Neighbor']
+    suggestions: ['Friend','Family','Neighbor','Colleague','Manager','Instructor','Mentor']
   },
   learning: {
     start: 150, end: 270,
     nodeColor: '#0a6e8a',
-    fillId:    'fill-learning',
-    labelId:   'lbl-learning',
+    lineDash:  '3 5',            // dotted
     label:     'Learning',
-    suggestions: ['Instructor','Study Partner','Tutor','Classmate','Coach','Advisor','Peer Mentor','Lab Partner']
+    suggestions: ['Friend','Family','Neighbor','Colleague','Manager','Instructor','Mentor']
   }
 };
 
@@ -396,21 +382,6 @@ function polar(angleDeg, r) {
   return { x: CX + r * Math.cos(a), y: CY + r * Math.sin(a) };
 }
 
-function sectorPath(startDeg, endDeg, outerR, innerR) {
-  const p1 = polar(startDeg, outerR);
-  const p2 = polar(endDeg,   outerR);
-  const p3 = polar(endDeg,   innerR);
-  const p4 = polar(startDeg, innerR);
-  const large = (endDeg - startDeg) > 180 ? 1 : 0;
-  return [
-    `M ${p4.x} ${p4.y}`,
-    `L ${p1.x} ${p1.y}`,
-    `A ${outerR} ${outerR} 0 ${large} 1 ${p2.x} ${p2.y}`,
-    `L ${p3.x} ${p3.y}`,
-    `A ${innerR} ${innerR} 0 ${large} 0 ${p4.x} ${p4.y}`,
-    'Z'
-  ].join(' ');
-}
 
 function truncate(str, max) {
   return str.length > max ? str.slice(0, max - 1) + '\u2026' : str;
@@ -430,9 +401,14 @@ function announce(msg) {
 
 
 /* ─────────────────────────────────────────────────
-   Layout: position nodes in a sector
+   Layout: position nodes in a sector (or use custom drag position)
 ───────────────────────────────────────────────── */
 function nodePosition(sectionKey, index) {
+  const node = state.nodes[sectionKey][index];
+  // Use dragged position if set
+  if (node && node.x !== undefined && node.y !== undefined) {
+    return { x: node.x, y: node.y };
+  }
   const sec   = SECTIONS[sectionKey];
   const total = state.nodes[sectionKey].length;
   const arcSpread = (sec.end - sec.start) * 0.72;
@@ -457,40 +433,21 @@ function nodePosition(sectionKey, index) {
    Render
 ───────────────────────────────────────────────── */
 function renderMap() {
-  // Sectors & dividers
-  const divAngles = [-90, 30, 150];
-  Object.entries(SECTIONS).forEach(([key, sec], i) => {
-    document.getElementById(sec.fillId).setAttribute('d',
-      sectorPath(sec.start, sec.end, R_OUTER, R_INNER));
-
-    // Divider at section START angle
-    const dv = document.getElementById(`div-${i}`);
-    const inner = polar(sec.start, R_INNER);
-    const outer = polar(sec.start, R_OUTER);
-    dv.setAttribute('x1', inner.x); dv.setAttribute('y1', inner.y);
-    dv.setAttribute('x2', outer.x); dv.setAttribute('y2', outer.y);
-
-    // Section label at mid-arc, 78% radius
-    const mid = polar((sec.start + sec.end) / 2, R_OUTER * 0.78);
-    const lbl = document.getElementById(sec.labelId);
-    lbl.setAttribute('x', mid.x);
-    lbl.setAttribute('y', mid.y);
-    lbl.textContent = sec.label;
-  });
-
-  // Connection lines
+  // Connection lines — one per node, from center only
   const gLines = document.getElementById('g-lines');
   gLines.innerHTML = '';
   Object.entries(state.nodes).forEach(([key, list]) => {
-    const color = SECTIONS[key].nodeColor;
+    const sec = SECTIONS[key];
     list.forEach((node, i) => {
       const pos = nodePosition(key, i);
-      const line = svgEl('line', {
+      const attrs = {
         x1: CX, y1: CY, x2: pos.x, y2: pos.y,
-        stroke: color, 'stroke-width': '2',
-        'stroke-opacity': '0.45'
-      });
-      gLines.appendChild(line);
+        stroke: sec.nodeColor, 'stroke-width': '2.5',
+        'stroke-opacity': '0.55',
+        id: `line-${key}-${i}`
+      };
+      if (sec.lineDash) attrs['stroke-dasharray'] = sec.lineDash;
+      gLines.appendChild(svgEl('line', attrs));
     });
   });
 
@@ -582,17 +539,90 @@ function renderMap() {
           e.preventDefault();
           removeNode(key, i);
         }
+        // Arrow keys nudge the node
+        const NUDGE = 8;
+        if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)) {
+          e.preventDefault();
+          const cur = nodePosition(key, i);
+          const node = state.nodes[key][i];
+          node.x = cur.x + (e.key === 'ArrowRight' ? NUDGE : e.key === 'ArrowLeft' ? -NUDGE : 0);
+          node.y = cur.y + (e.key === 'ArrowDown'  ? NUDGE : e.key === 'ArrowUp'   ? -NUDGE : 0);
+          renderMap();
+          saveState();
+          // Re-focus the moved node
+          requestAnimationFrame(() => {
+            const moved = document.querySelector(`[data-section="${key}"][data-index="${i}"]`);
+            if (moved) moved.focus();
+          });
+        }
       });
+
+      // Mouse / touch drag
+      g.addEventListener('mousedown',  e => startDrag(e, key, i));
+      g.addEventListener('touchstart', e => startDrag(e, key, i), { passive: false });
 
       gNodes.appendChild(g);
     });
   });
 }
 
+/* ─────────────────────────────────────────────────
+   Drag engine
+───────────────────────────────────────────────── */
+let drag = null;
+let rafPending = false;
+
+function getSVGCoords(e) {
+  const svg = document.getElementById('map-svg');
+  const pt  = svg.createSVGPoint();
+  const src = e.touches ? e.touches[0] : e;
+  pt.x = src.clientX;
+  pt.y = src.clientY;
+  return pt.matrixTransform(svg.getScreenCTM().inverse());
+}
+
+function startDrag(e, sectionKey, index) {
+  if (e.target.closest('.node-delete')) return;
+  e.preventDefault();
+  const pt   = getSVGCoords(e);
+  const pos  = nodePosition(sectionKey, index);
+  drag = { sectionKey, index, startX: pt.x, startY: pt.y, origX: pos.x, origY: pos.y };
+}
+
+document.addEventListener('mousemove', e => {
+  if (!drag) return;
+  const pt   = getSVGCoords(e);
+  const node = state.nodes[drag.sectionKey][drag.index];
+  node.x = drag.origX + (pt.x - drag.startX);
+  node.y = drag.origY + (pt.y - drag.startY);
+  if (!rafPending) {
+    rafPending = true;
+    requestAnimationFrame(() => { renderMap(); rafPending = false; });
+  }
+});
+
+document.addEventListener('touchmove', e => {
+  if (!drag) return;
+  e.preventDefault();
+  const pt   = getSVGCoords(e);
+  const node = state.nodes[drag.sectionKey][drag.index];
+  node.x = drag.origX + (pt.x - drag.startX);
+  node.y = drag.origY + (pt.y - drag.startY);
+  if (!rafPending) {
+    rafPending = true;
+    requestAnimationFrame(() => { renderMap(); rafPending = false; });
+  }
+}, { passive: false });
+
+document.addEventListener('mouseup',  () => { if (drag) { saveState(); drag = null; } });
+document.addEventListener('touchend', () => { if (drag) { saveState(); drag = null; } });
+
+
 function removeNode(section, index) {
   const name = state.nodes[section][index].name;
   state.nodes[section].splice(index, 1);
   renderMap();
+  saveState();
   announce(`${name} removed from map.`);
   document.querySelector(`[data-section="${section}"]`).focus();
 }
@@ -630,6 +660,7 @@ function saveCenterName() {
   const val = document.getElementById('input-center').value.trim();
   state.centerName = val || 'You';
   updateCenterLabel();
+  saveState();
   document.getElementById('name-modal').classList.remove('open');
   document.getElementById('center-node').focus();
   announce(`Center name updated to ${state.centerName}.`);
@@ -693,6 +724,7 @@ function confirmAdd() {
   const role = document.getElementById('input-role').value.trim();
   state.nodes[state.pendingSection].push({ name, role });
   renderMap();
+  saveState();
   announce(`${name} added to ${SECTIONS[state.pendingSection].label} section.`);
   closeAddModal();
 }
@@ -764,8 +796,35 @@ function exportPNG() {
 
 
 /* ─────────────────────────────────────────────────
+   Persistence (localStorage)
+───────────────────────────────────────────────── */
+const STORAGE_KEY = 'lazuli-connection-map-v1';
+
+function saveState() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      centerName: state.centerName,
+      nodes: state.nodes
+    }));
+  } catch(e) { /* storage unavailable — fail silently */ }
+}
+
+function loadState() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (!saved) return;
+    const parsed = JSON.parse(saved);
+    if (parsed.nodes)      state.nodes      = parsed.nodes;
+    if (parsed.centerName) state.centerName = parsed.centerName;
+  } catch(e) { /* corrupt data — start fresh */ }
+}
+
+
+/* ─────────────────────────────────────────────────
    Init
 ───────────────────────────────────────────────── */
+loadState();
+updateCenterLabel();
 renderMap();
 </script>
 </body>
