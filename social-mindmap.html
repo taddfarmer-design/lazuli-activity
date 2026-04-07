@@ -430,10 +430,27 @@ function nodePosition(sectionKey, index) {
 
 
 /* ─────────────────────────────────────────────────
+   Curved path helper — quadratic bezier from center to node.
+   Each line arcs gently so lines can never be mistaken
+   for node-to-node connections.
+───────────────────────────────────────────────── */
+function connectionPath(x2, y2) {
+  const dx = x2 - CX, dy = y2 - CY;
+  const len = Math.sqrt(dx * dx + dy * dy);
+  if (len < 1) return `M ${CX} ${CY} L ${x2} ${y2}`;
+  const curve = len * 0.22;
+  // Control point offset perpendicular (left of travel direction)
+  const cpx = (CX + x2) / 2 - (dy / len) * curve;
+  const cpy = (CY + y2) / 2 + (dx / len) * curve;
+  return `M ${CX} ${CY} Q ${cpx} ${cpy} ${x2} ${y2}`;
+}
+
+
+/* ─────────────────────────────────────────────────
    Render
 ───────────────────────────────────────────────── */
 function renderMap() {
-  // Connection lines — one per node, from center only
+  // Connection lines — one curved path per node, always from center
   const gLines = document.getElementById('g-lines');
   gLines.innerHTML = '';
   Object.entries(state.nodes).forEach(([key, list]) => {
@@ -441,13 +458,13 @@ function renderMap() {
     list.forEach((node, i) => {
       const pos = nodePosition(key, i);
       const attrs = {
-        x1: CX, y1: CY, x2: pos.x, y2: pos.y,
+        d: connectionPath(pos.x, pos.y),
         stroke: sec.nodeColor, 'stroke-width': '2.5',
-        'stroke-opacity': '0.55',
+        fill: 'none',
         id: `line-${key}-${i}`
       };
       if (sec.lineDash) attrs['stroke-dasharray'] = sec.lineDash;
-      gLines.appendChild(svgEl('line', attrs));
+      gLines.appendChild(svgEl('path', attrs));
     });
   });
 
@@ -471,13 +488,15 @@ function renderMap() {
         'data-index': String(i)
       });
 
-      const circle = svgEl('circle', {
+      const circleAttrs = {
         cx: x, cy: y, r: '38',
         fill: '#fff',
         stroke: color, 'stroke-width': '2.5',
         class: 'node-circle',
         style: 'filter:drop-shadow(0 2px 5px rgba(0,0,0,0.12))'
-      });
+      };
+      if (SECTIONS[key].lineDash) circleAttrs['stroke-dasharray'] = SECTIONS[key].lineDash;
+      const circle = svgEl('circle', circleAttrs);
       g.appendChild(circle);
 
       const nameY = node.role ? y - 5 : y + 5;
@@ -486,7 +505,7 @@ function renderMap() {
         'text-anchor': 'middle',
         'font-family': 'Arial,Helvetica,sans-serif',
         'font-size': '13', 'font-weight': '700',
-        fill: '#035271',
+        fill: color,
         'pointer-events': 'none'
       });
       tName.textContent = truncate(node.name, 10);
@@ -549,6 +568,7 @@ function renderMap() {
           node.y = cur.y + (e.key === 'ArrowDown'  ? NUDGE : e.key === 'ArrowUp'   ? -NUDGE : 0);
           renderMap();
           saveState();
+          // Re-focus the moved node
           requestAnimationFrame(() => {
             const moved = document.querySelector(`[data-section="${key}"][data-index="${i}"]`);
             if (moved) moved.focus();
