@@ -42,7 +42,7 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding-bottom: 72px;
+      padding-bottom: 24px;
       position: relative;
       overflow-x: hidden;
     }
@@ -283,38 +283,6 @@
       font-style: italic;
     }
 
-    /* ── Bottom nav ─────────────────────────────────── */
-    .bottom-nav {
-      position: fixed;
-      bottom: 0; left: 0; right: 0;
-      background: rgba(255,255,255,0.90);
-      border-top: 1px solid var(--border);
-      height: 64px;
-      display: flex;
-      align-items: stretch;
-      z-index: 100;
-      backdrop-filter: blur(10px);
-    }
-    .nav-item {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 0.22rem;
-      cursor: pointer;
-      background: none;
-      border: none;
-      font-family: inherit;
-      color: var(--nav-inactive);
-      font-size: 0.6rem;
-      font-weight: 600;
-      letter-spacing: 0.03em;
-      transition: color 0.15s;
-    }
-    .nav-item.active { color: var(--primary); }
-    .nav-item svg { width: 20px; height: 20px; }
-    .nav-item:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
 
     /* ── Modal ──────────────────────────────────────── */
     .overlay {
@@ -714,39 +682,6 @@
   </div>
 </div>
 
-<!-- ── BOTTOM NAV ────────────────────────────────────── -->
-<nav class="bottom-nav" aria-label="Main navigation">
-  <button class="nav-item" id="nav-home" aria-label="Home">
-    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
-      <path d="M3 9.5L10 3l7 6.5V17a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/>
-      <path d="M7.5 18V12h5v6"/>
-    </svg>
-    <span>Home</span>
-  </button>
-  <button class="nav-item active" id="nav-map" aria-label="Map" aria-current="page">
-    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
-      <circle cx="10" cy="10" r="7.5"/>
-      <path d="M10 2.5v15M2.5 10h15"/>
-      <path d="M4 5c1.8 1.2 4 1.8 6 1.8S14.2 6.2 16 5M4 15c1.8-1.2 4-1.8 6-1.8s4.2.6 6 1.8"/>
-    </svg>
-    <span>Map</span>
-  </button>
-  <button class="nav-item" id="nav-toolkit" aria-label="Toolkit">
-    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
-      <rect x="2" y="8" width="16" height="10" rx="1.5"/>
-      <path d="M6.5 8V6a3.5 3.5 0 017 0v2"/>
-      <line x1="10" y1="12" x2="10" y2="14"/>
-    </svg>
-    <span>Toolkit</span>
-  </button>
-  <button class="nav-item" id="nav-profile" aria-label="Profile">
-    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
-      <circle cx="10" cy="7" r="3.5"/>
-      <path d="M3 17.5c0-3.6 3.1-6.5 7-6.5s7 2.9 7 6.5"/>
-    </svg>
-    <span>Profile</span>
-  </button>
-</nav>
 
 <script>
 /* ─── Config ─── */
@@ -1090,9 +1025,6 @@ document.getElementById('export-btn').addEventListener('click',()=>{
   img.src=url;
 });
 
-/* ─── Bottom nav ─── */
-document.querySelectorAll('.nav-item').forEach(btn=>{ btn.addEventListener('click',()=>{ document.querySelectorAll('.nav-item').forEach(b=>{b.classList.remove('active');b.removeAttribute('aria-current');}); btn.classList.add('active'); btn.setAttribute('aria-current','page'); }); });
-document.getElementById('nav-map').classList.add('active');
 
 /* ─── Persistence ─── */
 const SK='lazuli-connection-map-v1';
