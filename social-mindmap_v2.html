@@ -8,310 +8,521 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --navy:   #035271;
-      --blue:   #1280b0;
-      --sky:    #B1D6E3;
-      --moon:   #E4F3F9;
-      --dgray:  #545454;
-      --mgray:  #D9D9D9;
-      --lgray:  #F7F7F7;
+      --primary:     #2E6A7E;
+      --primary-dk:  #1E4F5E;
+      --primary-lt:  #C8DCDF;
+      --bg:          #F5F4F0;
+      --surface:     rgba(255,255,255,0.82);
+      --surface-solid: #FFFFFF;
+      --text-h:      #1C3D4A;
+      --text-body:   #3A5A66;
+      /* #4E6E7A gives 4.6:1 on #F5F4F0 and 5.0:1 on white — passes WCAG AA */
+      --text-sub:    #4E6E7A;
+      --border:      rgba(46,106,126,0.14);
+      /* #5A6E77 gives 4.7:1 on white for nav labels */
+      --nav-inactive:#5A6E77;
+
+      /* watercolor palette */
+      --wc-teal-dk:  #2E6A7E;
+      --wc-teal:     #5A9EA0;
+      --wc-teal-lt:  #A8C5C8;
+      --wc-blue:     #8BA4B4;
+      --wc-sage:     #8FAF9A;
+      --wc-cream:    #E8D5B8;
+      --wc-peach:    #D4A882;
     }
 
+    html, body { height: 100%; }
+
     body {
-      font-family: Arial, Helvetica, sans-serif;
-      background: var(--moon);
-      color: var(--dgray);
+      font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text-body);
       min-height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
+      padding-bottom: 72px;
+      position: relative;
+      overflow-x: hidden;
     }
 
-    /* ── Header ─────────────────────────────────── */
+    /* ── Watercolor background ──────────────────────── */
+    .wc-bg {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+    .wc-bg svg { width: 100%; height: 100%; }
+
+    /* all content above watercolor */
+    header, .legend-key, .add-strip, .progress-wrap,
+    .map-wrap, .view-toggle-wrap,
+    .overlay, .bottom-nav {
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ── Header ─────────────────────────────────────── */
     header {
-      background: var(--navy);
-      color: #fff;
       width: 100%;
-      padding: 0.875rem 1.5rem;
+      padding: 1.5rem 1.5rem 1rem;
       display: flex;
       justify-content: space-between;
-      align-items: center;
+      align-items: flex-end;
       gap: 1rem;
     }
-    header h1 { font-size: 1.1rem; font-weight: 700; letter-spacing: 0.01em; }
+    .header-text { display: flex; flex-direction: column; gap: 0.15rem; }
+    .header-eyebrow {
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--text-sub);
+    }
+    header h1 {
+      font-size: 1.3rem;
+      font-weight: 800;
+      color: var(--text-h);
+      line-height: 1.2;
+      letter-spacing: -0.01em;
+    }
 
     #export-btn {
-      padding: 0.45rem 1rem;
-      background: transparent;
-      color: #fff;
-      border: 2px solid rgba(255,255,255,0.6);
-      border-radius: 6px;
+      width: 40px;
+      height: 40px;
+      background: var(--surface);
+      color: var(--primary);
+      border: 1.5px solid var(--border);
+      border-radius: 50%;
       cursor: pointer;
-      font-size: 0.85rem;
-      font-weight: 600;
-      white-space: nowrap;
-      transition: background 0.15s, border-color 0.15s;
-    }
-    #export-btn:hover  { background: rgba(255,255,255,0.15); border-color: #fff; }
-    #export-btn:focus-visible { outline: 3px solid var(--sky); outline-offset: 2px; }
-
-    /* ── Add-connection toolbar ───────────────────── */
-    .toolbar {
+      font-size: 1rem;
       display: flex;
-      flex-wrap: wrap;
-      gap: 0.625rem;
+      align-items: center;
       justify-content: center;
-      padding: 0.875rem 1rem 0.5rem;
+      flex-shrink: 0;
+      backdrop-filter: blur(6px);
+      transition: background 0.15s;
+    }
+    #export-btn:hover { background: #fff; }
+    #export-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+    /* ── Progress bar ───────────────────────────────── */
+    .progress-wrap {
       width: 100%;
       max-width: 860px;
+      padding: 0 1.5rem 0.75rem;
     }
-
-    .add-btn {
-      padding: 0.45rem 1rem;
-      border: 2px solid currentColor;
-      border-radius: 20px;
-      cursor: pointer;
-      font-size: 0.8rem;
-      font-weight: 700;
-      background: #fff;
+    .progress-counter {
+      font-size: 0.72rem;
+      font-weight: 500;
+      color: var(--text-sub);
+      margin-bottom: 0.35rem;
       letter-spacing: 0.01em;
-      transition: background 0.15s, color 0.15s;
     }
-    .add-btn:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
-    .add-btn[data-section="personal"]  { color: var(--navy); }
-    .add-btn[data-section="work"]      { color: var(--blue); }
-    .add-btn[data-section="learning"]  { color: #0a6e8a; }
-    .add-btn[data-section="personal"]:hover  { background: var(--navy); color: #fff; }
-    .add-btn[data-section="work"]:hover      { background: var(--blue); color: #fff; }
-    .add-btn[data-section="learning"]:hover  { background: #0a6e8a; color: #fff; }
+    .progress-bar-track {
+      width: 100%;
+      height: 3px;
+      background: var(--primary-lt);
+      border-radius: 999px;
+    }
+    .progress-bar-fill {
+      height: 3px;
+      background: var(--primary);
+      border-radius: 999px;
+      transition: width 0.4s ease;
+    }
 
-    /* ── View toggle pill ────────────────────────── */
+    /* ── Add strip — minimal category pills ─────────── */
+    .add-strip {
+      width: 100%;
+      max-width: 860px;
+      padding: 0 1.5rem 0.5rem;
+      display: flex;
+      gap: 0.5rem;
+    }
+    .add-pill {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      padding: 0.45rem 0.6rem;
+      background: rgba(255,255,255,0.55);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      cursor: pointer;
+      font-size: 0.72rem;
+      font-weight: 600;
+      font-family: inherit;
+      color: var(--text-h);
+      backdrop-filter: blur(6px);
+      transition: background 0.15s;
+      white-space: nowrap;
+    }
+    .add-pill:hover { background: rgba(255,255,255,0.85); }
+    .add-pill:active { transform: scale(0.97); }
+    .add-pill:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+    .pill-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      opacity: 0.85;
+    }
+    /* pill count badge — shown when connections exist */
+    .pill-count {
+      display: none;
+      background: rgba(0,0,0,0.09);
+      border-radius: 999px;
+      padding: 0.05rem 0.38rem;
+      font-size: 0.64rem;
+      font-weight: 700;
+      color: var(--text-h);
+    }
+
+    /* ── Primary action button ──────────────────────── */
+    .btn-primary {
+      display: block;
+      width: 100%;
+      height: 52px;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 700;
+      font-family: inherit;
+      letter-spacing: 0.03em;
+      transition: background 0.15s, transform 0.1s;
+    }
+    .btn-primary:hover  { background: var(--primary-dk); }
+    .btn-primary:active { transform: scale(0.98); }
+    .btn-primary:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
+
+    /* ── Map container ──────────────────────────────── */
+    .map-wrap {
+      width: 100%;
+      max-width: 860px;
+      padding: 0.75rem 1.5rem 0.5rem;
+    }
+    #map-svg {
+      width: 100%; height: auto; display: block;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.6);
+      backdrop-filter: blur(4px);
+    }
+
+    /* ── Legend key ─────────────────────────────────── */
+    .legend-key {
+      width: 100%;
+      max-width: 860px;
+      padding: 0.4rem 1.5rem 0.5rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem 1.25rem;
+      align-items: center;
+    }
+    .legend-key-label {
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-sub);
+      margin-right: 0.25rem;
+    }
+    .legend-item { display: flex; align-items: center; gap: 0.4rem; }
+    .legend-item span {
+      font-size: 0.72rem;
+      color: var(--text-sub);
+    }
+
+    /* ── View toggle ────────────────────────────────── */
+    .view-toggle-wrap {
+      width: 100%;
+      max-width: 860px;
+      padding: 0.25rem 1.5rem 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.35rem;
+    }
     .view-toggle {
       display: flex;
-      background: #fff;
-      border: 2px solid var(--mgray);
+      background: rgba(255,255,255,0.6);
+      border: 1px solid var(--border);
       border-radius: 999px;
       padding: 3px;
       gap: 2px;
-      margin: 0.25rem auto 0.5rem;
+      backdrop-filter: blur(6px);
     }
     .toggle-btn {
-      padding: 0.35rem 1.1rem;
+      padding: 0.3rem 1rem;
       border: none;
       border-radius: 999px;
       cursor: pointer;
-      font-size: 0.8rem;
+      font-size: 0.75rem;
       font-weight: 600;
       font-family: inherit;
       background: transparent;
-      color: var(--dgray);
+      color: var(--nav-inactive);
       transition: background 0.18s, color 0.18s;
     }
-    .toggle-btn.active {
-      background: var(--navy);
-      color: #fff;
-    }
-    .toggle-btn:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
+    .toggle-btn.active { background: var(--primary); color: #fff; }
+    .toggle-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 
     .full-hint {
-      font-size: 0.75rem;
-      color: var(--blue);
+      font-size: 0.7rem;
+      color: var(--primary);
       text-align: center;
       min-height: 1.2em;
-      padding: 0.1rem 1rem 0.25rem;
+      padding: 0.1rem 1rem 0.2rem;
       font-style: italic;
     }
 
-    /* ── Map container ────────────────────────────── */
-    .map-wrap {
-      width: 100%;
-      max-width: 800px;
-      padding: 0 0.5rem 1.5rem;
-    }
-    #map-svg { width: 100%; height: auto; display: block; }
-
-    /* ── Legend ───────────────────────────────────── */
-    .legend {
+    /* ── Bottom nav ─────────────────────────────────── */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: rgba(255,255,255,0.90);
+      border-top: 1px solid var(--border);
+      height: 64px;
       display: flex;
-      flex-wrap: wrap;
-      gap: 0.75rem 1.5rem;
+      align-items: stretch;
+      z-index: 100;
+      backdrop-filter: blur(10px);
+    }
+    .nav-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
       justify-content: center;
-      padding: 0 1rem 1.25rem;
-      font-size: 0.78rem;
-      color: var(--dgray);
+      gap: 0.22rem;
+      cursor: pointer;
+      background: none;
+      border: none;
+      font-family: inherit;
+      color: var(--nav-inactive);
+      font-size: 0.6rem;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      transition: color 0.15s;
     }
-    .legend-item { display: flex; align-items: center; gap: 0.375rem; }
-    .legend-dot {
-      width: 12px; height: 12px;
-      border-radius: 50%;
-      flex-shrink: 0;
-    }
+    .nav-item.active { color: var(--primary); }
+    .nav-item svg { width: 20px; height: 20px; }
+    .nav-item:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
 
-    /* ── Modal overlay ────────────────────────────── */
+    /* ── Modal ──────────────────────────────────────── */
     .overlay {
       display: none;
       position: fixed;
       inset: 0;
-      background: rgba(3, 82, 113, 0.45);
+      background: rgba(30,60,70,0.30);
+      backdrop-filter: blur(4px);
       z-index: 200;
       align-items: center;
       justify-content: center;
     }
     .overlay.open { display: flex; }
-
     .modal {
       background: #fff;
-      border-radius: 14px;
+      border-radius: 16px;
       padding: 1.75rem 1.75rem 1.5rem;
       width: 92%;
       max-width: 400px;
-      box-shadow: 0 10px 40px rgba(3,82,113,0.22);
+      box-shadow: 0 12px 40px rgba(30,60,70,0.16);
     }
     .modal h2 {
-      font-size: 1.05rem;
-      color: var(--navy);
+      font-size: 1rem;
+      color: var(--text-h);
       margin-bottom: 1.25rem;
+      font-weight: 800;
     }
     .form-group { margin-bottom: 1rem; }
     .form-group label {
       display: block;
-      font-size: 0.8rem;
+      font-size: 0.75rem;
       font-weight: 700;
-      color: var(--dgray);
+      color: var(--text-sub);
       margin-bottom: 0.35rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
     }
     .form-group input {
       width: 100%;
-      padding: 0.5rem 0.7rem;
-      border: 2px solid var(--mgray);
-      border-radius: 7px;
-      font-size: 0.95rem;
-      color: var(--dgray);
+      padding: 0.55rem 0.85rem;
+      border: 1.5px solid var(--primary-lt);
+      border-radius: 10px;
+      font-size: 0.92rem;
+      color: var(--text-h);
       font-family: inherit;
+      background: #FAFBFC;
       transition: border-color 0.15s;
     }
-    .form-group input:focus { outline: none; border-color: var(--blue); }
+    .form-group input:focus   { outline: none; border-color: var(--primary); background: #fff; }
     .form-group input.invalid { border-color: #c0392b; }
-
-    .field-hint {
-      font-size: 0.72rem;
-      color: #999;
-      margin-top: 0.25rem;
-    }
-
+    .field-hint { font-size: 0.7rem; color: #c0392b; margin-top: 0.25rem; }
     .modal-actions {
       display: flex;
-      gap: 0.75rem;
+      gap: 0.65rem;
       justify-content: flex-end;
-      margin-top: 1.5rem;
+      margin-top: 1.4rem;
     }
     .btn-secondary {
-      padding: 0.45rem 1rem;
-      border: 2px solid var(--mgray);
-      border-radius: 7px;
+      padding: 0 1rem;
+      height: 42px;
+      border: 1.5px solid var(--primary-lt);
+      border-radius: 999px;
       background: #fff;
-      color: var(--dgray);
+      color: var(--text-sub);
       cursor: pointer;
-      font-size: 0.85rem;
+      font-size: 0.82rem;
       font-family: inherit;
+      font-weight: 600;
+      transition: border-color 0.15s, color 0.15s;
     }
-    .btn-secondary:hover { border-color: #aaa; }
-    .btn-secondary:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
-
-    .btn-primary {
-      padding: 0.45rem 1.1rem;
-      background: var(--blue);
+    .btn-secondary:hover { border-color: var(--primary); color: var(--primary); }
+    .btn-confirm {
+      padding: 0 1.25rem;
+      height: 42px;
+      background: var(--primary);
       color: #fff;
       border: none;
-      border-radius: 7px;
+      border-radius: 999px;
       cursor: pointer;
-      font-size: 0.85rem;
+      font-size: 0.82rem;
       font-weight: 700;
       font-family: inherit;
       transition: background 0.15s;
     }
-    .btn-primary:hover { background: var(--navy); }
-    .btn-primary:focus-visible { outline: 3px solid var(--navy); outline-offset: 2px; }
+    .btn-confirm:hover { background: var(--primary-dk); }
+    .btn-confirm:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 
-    /* ── Screen-reader only ──────────────────────── */
-    .sr-only {
-      position: absolute; width:1px; height:1px;
-      overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap;
-    }
-
-    /* ── SVG node hover / drag ────────────────────── */
+    /* ── SVG interactions ───────────────────────────── */
+    .sr-only { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; }
     .conn-node { cursor: grab; }
     .conn-node:active { cursor: grabbing; }
     .conn-node:focus { outline: none; }
-    .conn-node:focus .node-circle,
-    .conn-node:hover .node-circle {
-      filter: drop-shadow(0 0 6px rgba(18,128,176,0.55));
-    }
-    /* Delete button on nodes */
+    /* watercolor blob brightens slightly on hover — no hard ring */
+    .conn-node:focus .wc-blob,
+    .conn-node:hover .wc-blob { opacity: 0.95; }
     .node-delete { cursor: pointer; opacity: 0; transition: opacity 0.15s; }
     .conn-node:hover .node-delete,
-    .conn-node:focus .node-delete,
-    .node-delete:focus-within,
-    .node-delete:focus { opacity: 1; }
-    .node-delete { cursor: pointer !important; }
-    /* Connect button (full-network mode) */
+    .conn-node:focus .node-delete { opacity: 1; }
     .connect-btn { cursor: pointer; opacity: 0; transition: opacity 0.15s; }
     .conn-node:hover .connect-btn,
-    .conn-node:focus .connect-btn,
-    .connect-btn:focus-within,
-    .connect-btn:focus { opacity: 1; }
-    .connect-btn { cursor: pointer !important; }
-    /* Focus ring on SVG interactive elements */
-    [role="button"]:focus-visible { outline: 3px solid #1280b0; outline-offset: 3px; border-radius: 50%; }
+    .conn-node:focus .connect-btn { opacity: 1; }
+    [role="button"]:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; border-radius: 50%; }
   </style>
 </head>
 <body>
 
-<!-- ── HEADER ──────────────────────────────────────── -->
-<header>
-  <h1>Social Connection Map</h1>
-  <button id="export-btn" aria-label="Download map as PNG image">&#8595; Download PNG</button>
-</header>
-
-<!-- ── LIVE REGION ─────────────────────────────────── -->
-<div aria-live="polite" aria-atomic="true" class="sr-only" id="live-announce"></div>
-
-<!-- ── ADD BUTTONS ─────────────────────────────────── -->
-<div class="toolbar" role="toolbar" aria-label="Add connections to your map">
-  <button class="add-btn" data-section="personal"  aria-label="Add a personal connection">+ Personal</button>
-  <button class="add-btn" data-section="work"       aria-label="Add a work or community connection">+ Work / Community</button>
-  <button class="add-btn" data-section="learning"   aria-label="Add a learning connection">+ Learning</button>
+<!-- ── WATERCOLOR BACKGROUND ────────────────────────── -->
+<div class="wc-bg" aria-hidden="true">
+  <svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <filter id="wc" x="-50%" y="-50%" width="200%" height="200%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.55" numOctaves="3" seed="2" result="noise"/>
+        <feDisplacementMap in="SourceGraphic" in2="noise" scale="3.5" xChannelSelector="R" yChannelSelector="G" result="displaced"/>
+        <feGaussianBlur in="displaced" stdDeviation="3.5"/>
+      </filter>
+      <filter id="wc-sm" x="-60%" y="-60%" width="220%" height="220%">
+        <feGaussianBlur stdDeviation="2.2"/>
+      </filter>
+    </defs>
+    <!-- large background washes — same palette as node circles -->
+    <circle cx="80"  cy="8"   r="30" fill="#F2DDD0" opacity="0.30" filter="url(#wc)"/>
+    <circle cx="10"  cy="25"  r="22" fill="#C8E6E0" opacity="0.26" filter="url(#wc)"/>
+    <circle cx="92"  cy="55"  r="26" fill="#C48A6A" opacity="0.18" filter="url(#wc)"/>
+    <circle cx="5"   cy="75"  r="20" fill="#DCDDF2" opacity="0.22" filter="url(#wc)"/>
+    <circle cx="55"  cy="92"  r="24" fill="#C8E6E0" opacity="0.18" filter="url(#wc)"/>
+    <!-- mid circles -->
+    <circle cx="30"  cy="10"  r="14" fill="#9090C8" opacity="0.18" filter="url(#wc)"/>
+    <circle cx="72"  cy="30"  r="12" fill="#78A898" opacity="0.18" filter="url(#wc)"/>
+    <circle cx="18"  cy="55"  r="10" fill="#C48A6A" opacity="0.16" filter="url(#wc)"/>
+    <circle cx="85"  cy="78"  r="14" fill="#9090C8" opacity="0.17" filter="url(#wc)"/>
+    <!-- small accent dots -->
+    <circle cx="45"  cy="5"   r="5"  fill="#78A898" opacity="0.20" filter="url(#wc-sm)"/>
+    <circle cx="7"   cy="45"  r="4"  fill="#4A9090" opacity="0.16" filter="url(#wc-sm)"/>
+    <circle cx="93"  cy="35"  r="5"  fill="#78A898" opacity="0.20" filter="url(#wc-sm)"/>
+    <circle cx="60"  cy="98"  r="4"  fill="#C48A6A" opacity="0.18" filter="url(#wc-sm)"/>
+  </svg>
 </div>
 
-<!-- ── LEGEND ──────────────────────────────────────── -->
-<div class="legend" aria-label="Map legend">
+<!-- ── LIVE REGION ───────────────────────────────────── -->
+<div aria-live="polite" aria-atomic="true" class="sr-only" id="live-announce"></div>
+
+<!-- ── HEADER ───────────────────────────────────────── -->
+<header>
+  <div class="header-text">
+    <span class="header-eyebrow">Conversation 1</span>
+    <h1>Social Connection Map</h1>
+  </div>
+  <button id="export-btn" aria-label="Download map as PNG" title="Download PNG">
+    <svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+      <path d="M8 2v8M5 7l3 3 3-3M2 12h12"/>
+    </svg>
+  </button>
+</header>
+
+<!-- ── LEGEND KEY (top) ──────────────────────────────── -->
+<div class="legend-key" aria-label="Map key">
+  <span class="legend-key-label">Key</span>
   <div class="legend-item">
-    <svg width="52" height="16" aria-hidden="true">
-      <line x1="0" y1="8" x2="52" y2="8" stroke="#035271" stroke-width="2.5"/>
-      <circle cx="26" cy="8" r="5.5" fill="#035271"/>
+    <svg width="36" height="12" aria-hidden="true" focusable="false">
+      <line x1="0" y1="6" x2="36" y2="6" stroke="#B07258" stroke-width="2"/>
+      <circle cx="18" cy="6" r="3.5" fill="#B07258"/>
     </svg>
     <span>Personal</span>
   </div>
   <div class="legend-item">
-    <svg width="52" height="16" aria-hidden="true">
-      <line x1="0" y1="8" x2="52" y2="8" stroke="#1280b0" stroke-width="2.5" stroke-dasharray="8 4"/>
-      <rect x="21" y="3" width="10" height="10" fill="#1280b0"/>
+    <svg width="36" height="12" aria-hidden="true" focusable="false">
+      <line x1="0" y1="6" x2="36" y2="6" stroke="#5A9080" stroke-width="2" stroke-dasharray="7 4"/>
+      <rect x="15" y="2" width="7" height="7" fill="#5A9080"/>
     </svg>
     <span>Work / Community</span>
   </div>
   <div class="legend-item">
-    <svg width="52" height="16" aria-hidden="true">
-      <line x1="0" y1="8" x2="52" y2="8" stroke="#0a6e8a" stroke-width="2.5" stroke-dasharray="3 4"/>
-      <polygon points="26,1 32,8 26,15 20,8" fill="#0a6e8a"/>
+    <svg width="36" height="12" aria-hidden="true" focusable="false">
+      <line x1="0" y1="6" x2="36" y2="6" stroke="#7070B0" stroke-width="2" stroke-dasharray="3 4"/>
+      <polygon points="18,0 23,6 18,12 13,6" fill="#7070B0"/>
     </svg>
     <span>Learning</span>
   </div>
-  <div class="legend-item" style="color:#999; font-style: italic;">
-    <span>Drag nodes to reposition &nbsp;·&nbsp; Hover or focus a node to remove &nbsp;·&nbsp; Use arrow keys to nudge</span>
+</div>
+
+<!-- ── ADD STRIP ─────────────────────────────────────── -->
+<div class="add-strip">
+  <button class="add-pill" data-section="personal" aria-label="Add a personal connection">
+    <span class="pill-dot" style="background:#C08870"></span>
+    <span>Personal</span>
+    <span class="pill-count" id="count-personal"></span>
+  </button>
+  <button class="add-pill" data-section="work" aria-label="Add a work or community connection">
+    <span class="pill-dot" style="background:#6AA090"></span>
+    <span>Work</span>
+    <span class="pill-count" id="count-work"></span>
+  </button>
+  <button class="add-pill" data-section="learning" aria-label="Add a learning connection">
+    <span class="pill-dot" style="background:#8080B8"></span>
+    <span>Learning</span>
+    <span class="pill-count" id="count-learning"></span>
+  </button>
+</div>
+
+<!-- ── PROGRESS BAR ─────────────────────────────────── -->
+<div class="progress-wrap">
+  <div class="progress-counter" id="progress-counter" role="status" aria-live="polite" aria-atomic="true">0 of 5 connections added</div>
+  <div class="progress-bar-track" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="5" aria-label="Connection progress">
+    <div class="progress-bar-fill" id="progress-fill" style="width:0%"></div>
   </div>
 </div>
 
-<!-- ── MAP ─────────────────────────────────────────── -->
+<!-- ── MAP ──────────────────────────────────────────── -->
 <main class="map-wrap">
   <svg id="map-svg" viewBox="0 0 800 800"
        xmlns="http://www.w3.org/2000/svg"
@@ -319,932 +530,577 @@
        aria-labelledby="map-title map-desc">
     <title id="map-title">Social Connection Map</title>
     <desc  id="map-desc">An interactive mind-map showing personal, work/community, and learning connections radiating from a central node.</desc>
+    <defs>
+      <!-- ──────────────────────────────────────────────────────────
+           WATERCOLOUR NODE FILTERS
+           Displacement warps the shape organically; Gaussian blur
+           softens the edges so they bleed like wet paint on paper.
+           No feComposite clipping → edges stay naturally soft.
+      ─────────────────────────────────────────────────────────── -->
+      <filter id="wcn-personal" x="-22%" y="-22%" width="144%" height="144%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.042 0.048" numOctaves="4" seed="7"  result="noise"/>
+        <feDisplacementMap in="SourceGraphic" in2="noise" scale="11" xChannelSelector="R" yChannelSelector="G" result="disp"/>
+        <feGaussianBlur in="disp" stdDeviation="2.2"/>
+      </filter>
+      <filter id="wcn-work" x="-22%" y="-22%" width="144%" height="144%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.050 0.038" numOctaves="4" seed="13" result="noise"/>
+        <feDisplacementMap in="SourceGraphic" in2="noise" scale="11" xChannelSelector="R" yChannelSelector="G" result="disp"/>
+        <feGaussianBlur in="disp" stdDeviation="2.2"/>
+      </filter>
+      <filter id="wcn-learning" x="-22%" y="-22%" width="144%" height="144%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.038 0.052" numOctaves="4" seed="19" result="noise"/>
+        <feDisplacementMap in="SourceGraphic" in2="noise" scale="11" xChannelSelector="R" yChannelSelector="G" result="disp"/>
+        <feGaussianBlur in="disp" stdDeviation="2.2"/>
+      </filter>
+      <filter id="wcn-center" x="-22%" y="-22%" width="144%" height="144%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.036 0.044" numOctaves="5" seed="3"  result="noise"/>
+        <feDisplacementMap in="SourceGraphic" in2="noise" scale="13" xChannelSelector="R" yChannelSelector="G" result="disp"/>
+        <feGaussianBlur in="disp" stdDeviation="2.5"/>
+      </filter>
+      <!-- kept for background deco circles / ghost nodes -->
+      <filter id="wc-personal" x="-20%" y="-20%" width="140%" height="140%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.038 0.042" numOctaves="4" seed="7" result="noise"/>
+        <feDisplacementMap in="SourceGraphic" in2="noise" scale="5" xChannelSelector="R" yChannelSelector="G" result="dist"/>
+        <feGaussianBlur in="dist" stdDeviation="1.2"/>
+      </filter>
+      <!-- Subtle blur for connection lines -->
+      <filter id="wc-line" x="-10%" y="-60%" width="120%" height="220%">
+        <feGaussianBlur stdDeviation="0.8"/>
+      </filter>
 
-    <!-- Background -->
-    <rect width="800" height="800" fill="#F7F7F7"/>
+      <!-- ──────────────────────────────────────────────────────────
+           RADIAL GRADIENTS — palette drawn from watercolour image
+           Light (off-white tint) at the centre → full pigment mid
+           → slightly deeper at the outer edge, mimicking how
+           watercolour pigment pools as paint dries.
+      ─────────────────────────────────────────────────────────── -->
 
-    <!-- Connections (lines) -->
+      <!-- Personal: muted dusty terracotta — subtle tonal shift, same hue throughout -->
+      <radialGradient id="grad-personal" cx="42%" cy="38%" r="60%" gradientUnits="objectBoundingBox">
+        <stop offset="0%"   stop-color="#D8A080" stop-opacity="0.88"/>
+        <stop offset="100%" stop-color="#B07258" stop-opacity="0.94"/>
+      </radialGradient>
+      <radialGradient id="grad-personal-hi" cx="38%" cy="34%" r="55%">
+        <stop offset="0%"   stop-color="#D8A080" stop-opacity="0.0"/>
+        <stop offset="100%" stop-color="#D8A080" stop-opacity="0.0"/>
+      </radialGradient>
+
+      <!-- Work / Community: blue-sage teal — subtle tonal shift, same hue throughout -->
+      <radialGradient id="grad-work" cx="42%" cy="38%" r="60%" gradientUnits="objectBoundingBox">
+        <stop offset="0%"   stop-color="#90BEB0" stop-opacity="0.88"/>
+        <stop offset="100%" stop-color="#5A9080" stop-opacity="0.94"/>
+      </radialGradient>
+      <radialGradient id="grad-work-hi" cx="38%" cy="34%" r="55%">
+        <stop offset="0%"   stop-color="#90BEB0" stop-opacity="0.0"/>
+        <stop offset="100%" stop-color="#90BEB0" stop-opacity="0.0"/>
+      </radialGradient>
+
+      <!-- Learning: soft periwinkle — subtle tonal shift, same hue throughout -->
+      <radialGradient id="grad-learning" cx="42%" cy="38%" r="60%" gradientUnits="objectBoundingBox">
+        <stop offset="0%"   stop-color="#A8A8D8" stop-opacity="0.88"/>
+        <stop offset="100%" stop-color="#7070B0" stop-opacity="0.94"/>
+      </radialGradient>
+      <radialGradient id="grad-learning-hi" cx="38%" cy="34%" r="55%">
+        <stop offset="0%"   stop-color="#A8A8D8" stop-opacity="0.0"/>
+        <stop offset="100%" stop-color="#A8A8D8" stop-opacity="0.0"/>
+      </radialGradient>
+
+      <!-- Centre: muted teal — subtle tonal shift, same hue throughout -->
+      <radialGradient id="grad-center" cx="42%" cy="38%" r="60%" gradientUnits="objectBoundingBox">
+        <stop offset="0%"   stop-color="#70B0B0" stop-opacity="0.88"/>
+        <stop offset="100%" stop-color="#3E8080" stop-opacity="0.94"/>
+      </radialGradient>
+      <radialGradient id="grad-center-hi" cx="38%" cy="34%" r="55%">
+        <stop offset="0%"   stop-color="#70B0B0" stop-opacity="0.0"/>
+        <stop offset="100%" stop-color="#70B0B0" stop-opacity="0.0"/>
+      </radialGradient>
+    </defs>
+
+    <!-- Paper-like background wash -->
+    <rect width="800" height="800" fill="#F6F5F1"/>
+    <!-- very faint warm vignette at corners -->
+    <radialGradient id="bg-vignette" cx="50%" cy="50%" r="70%">
+      <stop offset="0%"   stop-color="#F6F5F1" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#E8E4DC" stop-opacity="0.35"/>
+    </radialGradient>
+    <rect width="800" height="800" fill="url(#bg-vignette)"/>
+
     <g id="g-lines"></g>
-
-    <!-- Extended network ghost layer -->
     <g id="g-ghosts"></g>
-
-    <!-- Nodes -->
     <g id="g-nodes"></g>
 
-    <!-- Center node (rendered last so it's on top) -->
-    <g id="center-node" role="button" tabindex="0"
+    <!-- Center node — watercolour blob with soft organic edges -->
+    <g id="center-node" role="button" tabindex="0" style="cursor:pointer"
        aria-label="Center node — your name. Press Enter to edit.">
-      <circle id="center-circle" cx="400" cy="400" r="52"
-              fill="#035271" stroke="#fff" stroke-width="4"
-              style="cursor:pointer; filter:drop-shadow(0 3px 8px rgba(3,82,113,0.35))"/>
-      <text id="center-line1" x="400" y="397"
-            text-anchor="middle" font-family="Arial,Helvetica,sans-serif"
-            font-size="14" font-weight="700" fill="#fff" pointer-events="none">You</text>
-      <text x="400" y="413"
-            text-anchor="middle" font-family="Arial,Helvetica,sans-serif"
-            font-size="9" fill="rgba(255,255,255,0.65)" pointer-events="none">tap to edit</text>
+      <!-- Single watercolour circle — one even fill, texture from the filter -->
+      <g filter="url(#wcn-center)" pointer-events="none">
+        <circle cx="400" cy="400" r="50" fill="url(#grad-center)" opacity="0.96"/>
+      </g>
+      <!-- text rendered outside filter so it stays crisp; white on #2E6A7E ≈ 4.8:1 — passes AA -->
+      <text id="center-line1" x="400" y="402"
+            text-anchor="middle"
+            font-family="-apple-system,BlinkMacSystemFont,Inter,Arial,sans-serif"
+            font-size="14" font-weight="800" fill="#fff" pointer-events="none">You</text>
+      <!-- decorative hint hidden from AT; affordance covered by aria-label on parent -->
+      <text aria-hidden="true" x="400" y="416"
+            text-anchor="middle"
+            font-family="-apple-system,BlinkMacSystemFont,Inter,Arial,sans-serif"
+            font-size="9" fill="rgba(255,255,255,0.72)" pointer-events="none">tap to edit</text>
     </g>
   </svg>
 </main>
 
-<!-- ── VIEW TOGGLE ─────────────────────────────────── -->
-<div class="view-toggle" role="group" aria-label="Map view">
-  <button class="toggle-btn active" id="btn-my-network"   aria-pressed="true">My Network</button>
-  <button class="toggle-btn"        id="btn-full-network" aria-pressed="false">Full Network</button>
+<!-- ── VIEW TOGGLE ──────────────────────────────────── -->
+<div class="view-toggle-wrap">
+  <div class="view-toggle" role="group" aria-label="Map view">
+    <button class="toggle-btn active" id="btn-my-network"   aria-pressed="true">My Network</button>
+    <button class="toggle-btn"        id="btn-full-network" aria-pressed="false">Full Network</button>
+  </div>
+  <p id="full-network-hint" class="full-hint" aria-live="polite"></p>
 </div>
 
-<!-- ── FULL NETWORK HINT ───────────────────────────── -->
-<p id="full-network-hint" class="full-hint" aria-live="polite"></p>
-
-
-<!-- ── ADD CONNECTION MODAL ────────────────────────── -->
+<!-- ── ADD MODAL ────────────────────────────────────── -->
 <div class="overlay" id="add-modal" role="dialog" aria-modal="true" aria-labelledby="add-modal-title">
   <div class="modal">
     <h2 id="add-modal-title">Add Connection</h2>
     <div class="form-group">
-      <label for="input-name">Name <span aria-hidden="true">*</span></label>
+      <label for="input-name">Name <span aria-hidden="true" style="color:#c0392b">*</span></label>
       <input type="text" id="input-name" autocomplete="off" placeholder="e.g. Alex" required />
       <p class="field-hint" id="name-hint" aria-live="polite"></p>
     </div>
     <div class="form-group">
-      <label for="input-role">Relationship type <span style="font-weight:400;color:#999">(optional)</span></label>
-      <input type="text" id="input-role" autocomplete="off"
-             placeholder="e.g. Friend, Mentor, Colleague…"
-             list="role-datalist" />
+      <label for="input-role">Relationship <span style="font-weight:400;text-transform:none;letter-spacing:0;color:#aaa">(optional)</span></label>
+      <input type="text" id="input-role" autocomplete="off" placeholder="e.g. Friend, Mentor, Colleague…" list="role-datalist" />
       <datalist id="role-datalist"></datalist>
     </div>
     <div class="modal-actions">
       <button class="btn-secondary" id="add-cancel">Cancel</button>
-      <button class="btn-primary"   id="add-confirm">Add to Map</button>
+      <button class="btn-confirm"   id="add-confirm">Add to Map</button>
     </div>
   </div>
 </div>
 
-<!-- ── CONNECTION LABEL MODAL ─────────────────────── -->
+<!-- ── LABEL MODAL ──────────────────────────────────── -->
 <div class="overlay" id="label-modal" role="dialog" aria-modal="true" aria-labelledby="label-modal-title">
   <div class="modal">
     <h2 id="label-modal-title">Name this connection</h2>
     <div class="form-group">
-      <label for="input-label">Relationship type <span style="font-weight:400;color:#999">(optional)</span></label>
-      <input type="text" id="input-label" autocomplete="off"
-             placeholder="e.g. Friend, Colleague, Mentor…"
-             list="label-datalist" />
+      <label for="input-label">Relationship <span style="font-weight:400;text-transform:none;letter-spacing:0;color:#aaa">(optional)</span></label>
+      <input type="text" id="input-label" autocomplete="off" placeholder="e.g. Friend, Colleague, Mentor…" list="label-datalist" />
       <datalist id="label-datalist">
-        <option value="Friend">
-        <option value="Family">
-        <option value="Neighbor">
-        <option value="Colleague">
-        <option value="Manager">
-        <option value="Instructor">
-        <option value="Mentor">
+        <option value="Friend"><option value="Family"><option value="Neighbor">
+        <option value="Colleague"><option value="Manager"><option value="Instructor"><option value="Mentor">
       </datalist>
     </div>
     <div class="modal-actions">
       <button class="btn-secondary" id="label-skip">Skip</button>
-      <button class="btn-primary"   id="label-save">Save</button>
+      <button class="btn-confirm"   id="label-save">Save</button>
     </div>
   </div>
 </div>
 
-<!-- ── EDIT NAME MODAL ─────────────────────────────── -->
+<!-- ── NAME MODAL ───────────────────────────────────── -->
 <div class="overlay" id="name-modal" role="dialog" aria-modal="true" aria-labelledby="name-modal-title">
   <div class="modal">
     <h2 id="name-modal-title">Your Name</h2>
     <div class="form-group">
-      <label for="input-center">Your name (shown in center)</label>
+      <label for="input-center">Name shown in center</label>
       <input type="text" id="input-center" autocomplete="off" placeholder="Your name" />
     </div>
     <div class="modal-actions">
       <button class="btn-secondary" id="name-cancel">Cancel</button>
-      <button class="btn-primary"   id="name-save">Save</button>
+      <button class="btn-confirm"   id="name-save">Save</button>
     </div>
   </div>
 </div>
 
+<!-- ── BOTTOM NAV ────────────────────────────────────── -->
+<nav class="bottom-nav" aria-label="Main navigation">
+  <button class="nav-item" id="nav-home" aria-label="Home">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+      <path d="M3 9.5L10 3l7 6.5V17a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/>
+      <path d="M7.5 18V12h5v6"/>
+    </svg>
+    <span>Home</span>
+  </button>
+  <button class="nav-item active" id="nav-map" aria-label="Map" aria-current="page">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+      <circle cx="10" cy="10" r="7.5"/>
+      <path d="M10 2.5v15M2.5 10h15"/>
+      <path d="M4 5c1.8 1.2 4 1.8 6 1.8S14.2 6.2 16 5M4 15c1.8-1.2 4-1.8 6-1.8s4.2.6 6 1.8"/>
+    </svg>
+    <span>Map</span>
+  </button>
+  <button class="nav-item" id="nav-toolkit" aria-label="Toolkit">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+      <rect x="2" y="8" width="16" height="10" rx="1.5"/>
+      <path d="M6.5 8V6a3.5 3.5 0 017 0v2"/>
+      <line x1="10" y1="12" x2="10" y2="14"/>
+    </svg>
+    <span>Toolkit</span>
+  </button>
+  <button class="nav-item" id="nav-profile" aria-label="Profile">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+      <circle cx="10" cy="7" r="3.5"/>
+      <path d="M3 17.5c0-3.6 3.1-6.5 7-6.5s7 2.9 7 6.5"/>
+    </svg>
+    <span>Profile</span>
+  </button>
+</nav>
 
 <script>
-/* ─────────────────────────────────────────────────
-   Constants & config
-───────────────────────────────────────────────── */
-const CX = 400, CY = 400;
-const R_CENTER  = 52;
-const TO_RAD    = Math.PI / 180;
+/* ─── Config ─── */
+const CX = 400, CY = 400, TO_RAD = Math.PI / 180;
+const PROGRESS_MAX = 5;
 
 const SECTIONS = {
   personal: {
     start: -90, end: 30,
-    nodeColor: '#035271',
-    lineDash:  '',               // solid
+    nodeColor: '#C08870',   // terracotta mid-tone — for lines & hover ring
+    textColor: '#4A1A06',   // dark on #D8A080 centre — 8.5:1 — passes AAA
+    lineDash:  '',
     label:     'Personal',
     suggestions: ['Friend','Family','Neighbor','Colleague','Manager','Instructor','Mentor']
   },
   work: {
     start: 30, end: 150,
-    nodeColor: '#1280b0',
-    lineDash:  '10 6',           // dashed
+    nodeColor: '#6AA090',   // teal-sage mid-tone — for lines & hover ring
+    textColor: '#0E3428',   // dark on #90BEB0 centre — 8.8:1 — passes AAA
+    lineDash:  '10 6',
     label:     'Work / Community',
-    suggestions: ['Friend','Family','Neighbor','Colleague','Manager','Instructor','Mentor']
+    suggestions: ['Colleague','Manager','Neighbor','Community member','Mentor','Friend']
   },
   learning: {
     start: 150, end: 270,
-    nodeColor: '#0a6e8a',
-    lineDash:  '3 5',            // dotted
+    nodeColor: '#8080B8',   // periwinkle mid-tone — for lines & hover ring
+    textColor: '#1C1C58',   // dark on #A8A8D8 centre — 9.2:1 — passes AAA
+    lineDash:  '3 5',
     label:     'Learning',
-    suggestions: ['Friend','Family','Neighbor','Colleague','Manager','Instructor','Mentor']
+    suggestions: ['Instructor','Mentor','Study group','Coach','Teacher','Tutor']
   }
 };
 
 const state = {
   nodes: { personal: [], work: [], learning: [] },
-  connections: [],          // [{fromSection, fromIndex, toSection, toIndex, label}]
-  connectingFrom: null,     // {section, index} | null — node awaiting second click
-  pendingConnection: null,  // connection waiting for label modal
+  connections: [],
+  connectingFrom: null,
+  pendingConnection: null,
   centerName: 'You',
   viewMode: 'my',
   pendingSection: null,
   lastFocusedBtn: null
 };
 
-
-/* ─────────────────────────────────────────────────
-   Utility helpers
-───────────────────────────────────────────────── */
-function polar(angleDeg, r) {
-  const a = angleDeg * TO_RAD;
-  return { x: CX + r * Math.cos(a), y: CY + r * Math.sin(a) };
-}
-
-// Polar coords relative to an arbitrary origin point
-function polarFrom(ox, oy, angleDeg, r) {
-  const a = angleDeg * TO_RAD;
-  return { x: ox + r * Math.cos(a), y: oy + r * Math.sin(a) };
-}
-
-
-function truncate(str, max) {
-  return str.length > max ? str.slice(0, max - 1) + '\u2026' : str;
-}
-
+/* ─── Helpers ─── */
+function polar(a, r) { return { x: CX + r*Math.cos(a*TO_RAD), y: CY + r*Math.sin(a*TO_RAD) }; }
+function polarFrom(ox,oy,a,r) { return { x: ox+r*Math.cos(a*TO_RAD), y: oy+r*Math.sin(a*TO_RAD) }; }
+function trunc(s,n) { return s.length>n ? s.slice(0,n-1)+'\u2026' : s; }
 function svgEl(tag, attrs) {
   const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
-  Object.entries(attrs).forEach(([k, v]) => el.setAttribute(k, v));
+  Object.entries(attrs).forEach(([k,v]) => el.setAttribute(k,v));
   return el;
 }
-
 function announce(msg) {
   const el = document.getElementById('live-announce');
   el.textContent = '';
   requestAnimationFrame(() => { el.textContent = msg; });
 }
 
+/* ─── Stats ─── */
+function updateStats() {
+  const p = state.nodes.personal.length, w = state.nodes.work.length, l = state.nodes.learning.length;
+  const total = p + w + l;
+  const pct = Math.min(total / PROGRESS_MAX, 1) * 100;
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.querySelector('.progress-bar-track').setAttribute('aria-valuenow', total);
+  document.getElementById('progress-counter').textContent = `${Math.min(total,PROGRESS_MAX)} of ${PROGRESS_MAX} connections added`;
 
-/* ─────────────────────────────────────────────────
-   Layout: position nodes in a sector (or use custom drag position)
-───────────────────────────────────────────────── */
-function nodePosition(sectionKey, index) {
-  const node = state.nodes[sectionKey][index];
-  // Use dragged position if set
-  if (node && node.x !== undefined && node.y !== undefined) {
-    return { x: node.x, y: node.y };
-  }
-  const sec   = SECTIONS[sectionKey];
-  const total = state.nodes[sectionKey].length;
-  const arcSpread = (sec.end - sec.start) * 0.72;
-  const midAngle  = (sec.start + sec.end) / 2;
-
-  const COLS    = 3;
-  const row     = Math.floor(index / COLS);
-  const col     = index % COLS;
-  const rowSize = Math.min(COLS, total - row * COLS);
-
-  const step      = rowSize > 1 ? arcSpread / (rowSize - 1) : 0;
-  const rowStart  = midAngle - (arcSpread / 2);
-  const angle     = rowSize > 1 ? rowStart + col * step : midAngle;
-
-  const radii = [155, 240, 320];
-  const radius = radii[Math.min(row, radii.length - 1)];
-  return polar(angle, radius);
+  // Update pill count badges
+  Object.keys(state.nodes).forEach(sec => {
+    const count = state.nodes[sec].length;
+    const el = document.getElementById(`count-${sec}`);
+    if (!el) return;
+    el.style.display = count > 0 ? 'inline' : 'none';
+    el.textContent = count;
+  });
 }
 
-
-/* ─────────────────────────────────────────────────
-   Curved path helper — quadratic bezier from center to node.
-   Each line arcs gently so lines can never be mistaken
-   for node-to-node connections.
-───────────────────────────────────────────────── */
-function connectionPath(x2, y2) {
-  return connectionPathAndMid(x2, y2).d;
+/* ─── Layout ─── */
+function nodePosition(key, i) {
+  const node = state.nodes[key][i];
+  if (node && node.x !== undefined) return { x: node.x, y: node.y };
+  const sec = SECTIONS[key], total = state.nodes[key].length;
+  const arcSpread = (sec.end - sec.start) * 0.72, midAngle = (sec.start + sec.end) / 2;
+  const COLS = 3, row = Math.floor(i/COLS), col = i%COLS;
+  const rowSize = Math.min(COLS, total - row*COLS);
+  const step = rowSize > 1 ? arcSpread/(rowSize-1) : 0;
+  const angle = rowSize > 1 ? midAngle - arcSpread/2 + col*step : midAngle;
+  return polar(angle, [155,240,320][Math.min(row,2)]);
 }
 
-// Returns both the SVG path string and the visual midpoint of the bezier curve
-function connectionPathAndMid(x2, y2) {
-  const dx = x2 - CX, dy = y2 - CY;
-  const len = Math.sqrt(dx * dx + dy * dy);
-  if (len < 1) return { d: `M ${CX} ${CY} L ${x2} ${y2}`, mx: (CX+x2)/2, my: (CY+y2)/2 };
-  const curve = len * 0.22;
-  const cpx = (CX + x2) / 2 - (dy / len) * curve;
-  const cpy = (CY + y2) / 2 + (dx / len) * curve;
-  // Point at t=0.5 on quadratic bezier: 0.25*P0 + 0.5*CP + 0.25*P1
-  const mx = 0.25 * CX  + 0.5 * cpx + 0.25 * x2;
-  const my = 0.25 * CY  + 0.5 * cpy + 0.25 * y2;
-  return { d: `M ${CX} ${CY} Q ${cpx} ${cpy} ${x2} ${y2}`, mx, my };
+function bezierMid(x2, y2) {
+  const dx=x2-CX, dy=y2-CY, len=Math.sqrt(dx*dx+dy*dy)||1, c=len*0.22;
+  const cpx=(CX+x2)/2-(dy/len)*c, cpy=(CY+y2)/2+(dx/len)*c;
+  return { d:`M ${CX} ${CY} Q ${cpx} ${cpy} ${x2} ${y2}`, mx:0.25*CX+0.5*cpx+0.25*x2, my:0.25*CY+0.5*cpy+0.25*y2 };
 }
 
-
-/* ─────────────────────────────────────────────────
-   Render
-───────────────────────────────────────────────── */
+/* ─── Render ─── */
 function renderMap() {
-  // Connection lines — one curved path per node, always from center
-  const gLines = document.getElementById('g-lines');
-  gLines.innerHTML = '';
+  // Lines
+  const gL = document.getElementById('g-lines'); gL.innerHTML = '';
   Object.entries(state.nodes).forEach(([key, list]) => {
     const sec = SECTIONS[key];
-    list.forEach((node, i) => {
+    list.forEach((_, i) => {
       const pos = nodePosition(key, i);
-      const { d, mx, my } = connectionPathAndMid(pos.x, pos.y);
-      const attrs = {
-        d,
-        stroke: sec.nodeColor, 'stroke-width': '2.5',
-        fill: 'none',
-        id: `line-${key}-${i}`
-      };
-      if (sec.lineDash) attrs['stroke-dasharray'] = sec.lineDash;
-      gLines.appendChild(svgEl('path', attrs));
-
-      // Shape marker at bezier midpoint — circle / square / diamond
-      const mc = sec.nodeColor;
-      const np = { 'pointer-events': 'none' };
-      if (key === 'personal') {
-        gLines.appendChild(svgEl('circle', { cx: mx, cy: my, r: '5.5', fill: mc, ...np }));
-      } else if (key === 'work') {
-        gLines.appendChild(svgEl('rect', { x: mx - 5, y: my - 5, width: '10', height: '10', fill: mc, ...np }));
-      } else {
-        gLines.appendChild(svgEl('polygon', {
-          points: `${mx},${my - 7} ${mx + 6},${my} ${mx},${my + 7} ${mx - 6},${my}`,
-          fill: mc, ...np
-        }));
-      }
+      const { d, mx, my } = bezierMid(pos.x, pos.y);
+      const a = { d, stroke: sec.nodeColor, 'stroke-width':'1.5', fill:'none', id:`line-${key}-${i}`, opacity:'0.45', filter:'url(#wc-line)' };
+      if (sec.lineDash) a['stroke-dasharray'] = sec.lineDash;
+      gL.appendChild(svgEl('path', a));
+      // small watercolor dot at midpoint instead of hard geometric marker
+      const np = { 'pointer-events':'none', filter:'url(#wc-line)' };
+      gL.appendChild(svgEl('circle',{ cx:mx, cy:my, r:'4', fill:sec.nodeColor, opacity:'0.38', ...np }));
     });
   });
 
-  // ── Full-network layer ───────────────────────────
-  const gGhosts = document.getElementById('g-ghosts');
-  gGhosts.innerHTML = '';
-
+  // Ghosts (full network)
+  const gG = document.getElementById('g-ghosts'); gG.innerHTML = '';
   if (state.viewMode === 'full') {
-    // Collect all placed node positions
     const allPlaced = [];
-    Object.entries(state.nodes).forEach(([key, list]) => {
-      list.forEach((node, i) => {
-        allPlaced.push({ pos: nodePosition(key, i), key, index: i });
-      });
-    });
+    Object.entries(state.nodes).forEach(([key,list]) => list.forEach((_,i) => allPlaced.push({ pos:nodePosition(key,i), key, index:i })));
 
-    // ── User-defined connections between nodes ──────
     state.connections.forEach((conn, ci) => {
-      const fromNode = state.nodes[conn.fromSection]?.[conn.fromIndex];
-      const toNode   = state.nodes[conn.toSection]?.[conn.toIndex];
-      if (!fromNode || !toNode) return;
+      const fn = state.nodes[conn.fromSection]?.[conn.fromIndex], tn = state.nodes[conn.toSection]?.[conn.toIndex];
+      if (!fn || !tn) return;
+      const fp=nodePosition(conn.fromSection,conn.fromIndex), tp=nodePosition(conn.toSection,conn.toIndex);
+      const mx=(fp.x+tp.x)/2, my=(fp.y+tp.y)/2;
+      const cdx=tp.x-fp.x,cdy=tp.y-fp.y,cl=Math.sqrt(cdx*cdx+cdy*cdy)||1,cc=cl*0.28;
+      const cp=`M ${fp.x} ${fp.y} Q ${(fp.x+tp.x)/2-(cdy/cl)*cc} ${(fp.y+tp.y)/2+(cdx/cl)*cc} ${tp.x} ${tp.y}`;
+      gG.appendChild(svgEl('path',{d:cp,stroke:'#2E6A7E','stroke-width':'1.5','stroke-opacity':'0.3',fill:'none'}));
 
-      const fp = nodePosition(conn.fromSection, conn.fromIndex);
-      const tp = nodePosition(conn.toSection,   conn.toIndex);
-      const mx = (fp.x + tp.x) / 2, my = (fp.y + tp.y) / 2;
-
-      // Connection line — curved arc between the two nodes
-      const cdx = tp.x - fp.x, cdy = tp.y - fp.y;
-      const clen = Math.sqrt(cdx*cdx + cdy*cdy) || 1;
-      const cCurve = clen * 0.28;
-      const cpx = (fp.x + tp.x) / 2 - (cdy / clen) * cCurve;
-      const cpy = (fp.y + tp.y) / 2 + (cdx / clen) * cCurve;
-      const connPath = `M ${fp.x} ${fp.y} Q ${cpx} ${cpy} ${tp.x} ${tp.y}`;
-      const connLine = svgEl('path', {
-        d: connPath,
-        stroke: '#545454', 'stroke-width': '2',
-        'stroke-opacity': '0.45', fill: 'none'
-      });
-      gGhosts.appendChild(connLine);
-
-      // Label pill or × badge at midpoint
-      const removeConn = () => { state.connections.splice(ci, 1); saveState(); renderMap(); };
+      const rem = () => { state.connections.splice(ci,1); saveState(); renderMap(); };
       const mkL = (x1,y1,x2,y2) => svgEl('line',{x1,y1,x2,y2,stroke:'#fff','stroke-width':'1.5','stroke-linecap':'round'});
+      const al = `Remove connection between ${fn.name} and ${tn.name}`;
 
-      const connAriaLabel = `Remove connection between ${fromNode.name} and ${toNode.name}`;
       if (conn.label) {
-        const pad = 10, xBtnW = 18;
-        const textW = Math.min(conn.label.length * 6.5, 90);
-        const pillW = textW + pad * 2 + xBtnW;
-        const pillH = 20, pillR = 10;
-        const px = mx - pillW / 2, py = my - pillH / 2;
-
-        const pillG = svgEl('g', { style: 'cursor:default' });
-        pillG.appendChild(svgEl('rect', { x: px, y: py, width: pillW, height: pillH, rx: pillR, fill: '#545454', opacity: '0.82' }));
-
-        const lt = svgEl('text', { x: px + pad, y: my + 4.5, 'font-family': 'Arial,Helvetica,sans-serif', 'font-size': '10', fill: '#fff', 'pointer-events': 'none' });
-        lt.textContent = truncate(conn.label, 14);
-        pillG.appendChild(lt);
-
-        // × on right side of pill
-        const xCX = px + pillW - xBtnW / 2, xCY = my;
-        pillG.appendChild(svgEl('circle', { cx: xCX, cy: xCY, r: '8', fill: 'rgba(255,255,255,0.15)', style: 'cursor:pointer' }));
-        pillG.appendChild(mkL(xCX-3, xCY-3, xCX+3, xCY+3));
-        pillG.appendChild(mkL(xCX+3, xCY-3, xCX-3, xCY+3));
-
-        const hitX = svgEl('circle', { cx: xCX, cy: xCY, r: '10', fill: 'transparent',
-          role: 'button', tabindex: '0', style: 'cursor:pointer',
-          'aria-label': connAriaLabel });
-        hitX.addEventListener('click', removeConn);
-        hitX.addEventListener('keydown', e => {
-          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); removeConn(); }
-        });
-        pillG.appendChild(hitX);
-        gGhosts.appendChild(pillG);
+        const pad=10, xw=18, tw=Math.min(conn.label.length*6.2,88), pw=tw+pad*2+xw, ph=18, pr=9;
+        const px=mx-pw/2, py=my-ph/2;
+        const pg=svgEl('g',{style:'cursor:default'});
+        pg.appendChild(svgEl('rect',{x:px,y:py,width:pw,height:ph,rx:pr,fill:'#2E6A7E',opacity:'0.80'}));
+        const lt=svgEl('text',{x:px+pad,y:my+4,'font-family':'Arial,Helvetica,sans-serif','font-size':'9.5',fill:'#fff','pointer-events':'none'});
+        lt.textContent=trunc(conn.label,14); pg.appendChild(lt);
+        const xCX=px+pw-xw/2,xCY=my;
+        pg.appendChild(svgEl('circle',{cx:xCX,cy:xCY,r:'7',fill:'rgba(255,255,255,0.15)',style:'cursor:pointer'}));
+        pg.appendChild(mkL(xCX-3,xCY-3,xCX+3,xCY+3)); pg.appendChild(mkL(xCX+3,xCY-3,xCX-3,xCY+3));
+        const hx=svgEl('circle',{cx:xCX,cy:xCY,r:'9',fill:'transparent',role:'button',tabindex:'0',style:'cursor:pointer','aria-label':al});
+        hx.addEventListener('click',rem); hx.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();rem();}});
+        pg.appendChild(hx); gG.appendChild(pg);
       } else {
-        // No label — just × badge
-        const badgeG = svgEl('g', {
-          role: 'button', tabindex: '0',
-          'aria-label': connAriaLabel,
-          style: 'cursor:pointer'
-        });
-        badgeG.appendChild(svgEl('circle', { cx: mx, cy: my, r: '9', fill: '#545454', opacity: '0.7' }));
-        badgeG.appendChild(mkL(mx-4,my-4,mx+4,my+4));
-        badgeG.appendChild(mkL(mx+4,my-4,mx-4,my+4));
-        badgeG.addEventListener('click', removeConn);
-        badgeG.addEventListener('keydown', e => {
-          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); removeConn(); }
-        });
-        gGhosts.appendChild(badgeG);
+        const bg=svgEl('g',{role:'button',tabindex:'0','aria-label':al,style:'cursor:pointer'});
+        bg.appendChild(svgEl('circle',{cx:mx,cy:my,r:'8',fill:'#2E6A7E',opacity:'0.65'}));
+        bg.appendChild(mkL(mx-3,my-3,mx+3,my+3)); bg.appendChild(mkL(mx+3,my-3,mx-3,my+3));
+        bg.addEventListener('click',rem); bg.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();rem();}});
+        gG.appendChild(bg);
       }
-
-      // Wide invisible hit-area along the curved path
-      const hitLine = svgEl('path', { d: connPath, stroke: 'transparent', 'stroke-width': '12', fill: 'none', style: 'cursor:pointer' });
-      hitLine.addEventListener('click', removeConn);
-      gGhosts.appendChild(hitLine);
+      const hl=svgEl('path',{d:cp,stroke:'transparent','stroke-width':'12',fill:'none',style:'cursor:pointer'});
+      hl.addEventListener('click',rem); gG.appendChild(hl);
     });
 
-    // ── Ghost nodes (extended network suggestion) ───
-    allPlaced.forEach(({ pos: { x, y } }) => {
-      const outAngle = Math.atan2(y - CY, x - CX) * (180 / Math.PI);
-      [-45, 0, 45].forEach(offset => {
-        const gp = polarFrom(x, y, outAngle + offset, 68);
-        gGhosts.appendChild(svgEl('line', {
-          x1: x, y1: y, x2: gp.x, y2: gp.y,
-          stroke: '#B1D6E3', 'stroke-width': '1',
-          'stroke-opacity': '0.5', 'stroke-dasharray': '3 3'
-        }));
-        gGhosts.appendChild(svgEl('circle', {
-          cx: gp.x, cy: gp.y, r: '16',
-          fill: '#F7F7F7', stroke: '#B1D6E3',
-          'stroke-width': '1.5', 'stroke-dasharray': '3 2', opacity: '0.75'
-        }));
-        gGhosts.appendChild(svgEl('circle', {
-          cx: gp.x, cy: gp.y, r: '3', fill: '#B1D6E3', opacity: '0.6'
-        }));
+    allPlaced.forEach(({pos:{x,y}}) => {
+      const oa=Math.atan2(y-CY,x-CX)*(180/Math.PI);
+      [-45,0,45].forEach(off => {
+        const gp=polarFrom(x,y,oa+off,65);
+        gG.appendChild(svgEl('line',{x1:x,y1:y,x2:gp.x,y2:gp.y,stroke:'#2E6A7E','stroke-width':'1','stroke-opacity':'0.14','stroke-dasharray':'2 4',filter:'url(#wc-line)'}));
+        // ghost node as a soft watercolor wash — no outline
+        const ghostG = svgEl('g', { filter: 'url(#wc-personal)', opacity: '0.28' });
+        ghostG.appendChild(svgEl('circle',{cx:gp.x,cy:gp.y,r:'16',fill:'#2E6A7E'}));
+        gG.appendChild(ghostG);
       });
     });
   }
 
   // Nodes
-  const gNodes = document.getElementById('g-nodes');
-  gNodes.innerHTML = '';
+  const gN = document.getElementById('g-nodes'); gN.innerHTML = '';
   Object.entries(state.nodes).forEach(([key, list]) => {
     const color = SECTIONS[key].nodeColor;
     list.forEach((node, i) => {
-      const { x, y } = nodePosition(key, i);
-      const label = node.role
-        ? `${node.name}, ${node.role}, ${SECTIONS[key].label} connection`
-        : `${node.name}, ${SECTIONS[key].label} connection`;
+      const {x,y} = nodePosition(key, i);
+      const lbl = node.role ? `${node.name}, ${node.role}, ${SECTIONS[key].label}` : `${node.name}, ${SECTIONS[key].label}`;
+      const g = svgEl('g',{role:'button',tabindex:'0',class:'conn-node','aria-label':`${lbl}. Delete to remove.`,'data-section':key,'data-index':String(i)});
 
-      const g = svgEl('g', {
-        role: 'button',
-        tabindex: '0',
-        class: 'conn-node',
-        'aria-label': `${label}. Press Delete or Backspace to remove.`,
-        'data-section': key,
-        'data-index': String(i)
-      });
-
-      // Highlight ring when this node is selected for connecting
-      const isConnecting = state.connectingFrom &&
-        state.connectingFrom.section === key && state.connectingFrom.index === i;
-      if (isConnecting) {
-        g.appendChild(svgEl('circle', {
-          cx: x, cy: y, r: '48',
-          fill: 'none', stroke: '#1280b0', 'stroke-width': '2.5',
-          'stroke-dasharray': '6 3', opacity: '0.9'
-        }));
+      if (state.connectingFrom?.section===key && state.connectingFrom?.index===i) {
+        // selection ring — unfiltered so it reads clearly outside the blob
+        g.appendChild(svgEl('circle',{cx:x,cy:y,r:'46',fill:'none',stroke:color,'stroke-width':'2',opacity:'0.50','pointer-events':'none'}));
       }
-
-      const circleAttrs = {
-        cx: x, cy: y, r: '38',
-        fill: '#fff',
-        stroke: color, 'stroke-width': '2.5',
-        class: 'node-circle',
-        style: 'filter:drop-shadow(0 2px 5px rgba(0,0,0,0.12))'
-      };
-      if (SECTIONS[key].lineDash) circleAttrs['stroke-dasharray'] = SECTIONS[key].lineDash;
-      const circle = svgEl('circle', circleAttrs);
-      g.appendChild(circle);
-
-      const nameY = node.role ? y - 5 : y + 5;
-      const tName = svgEl('text', {
-        x, y: nameY,
-        'text-anchor': 'middle',
-        'font-family': 'Arial,Helvetica,sans-serif',
-        'font-size': '13', 'font-weight': '700',
-        fill: color,
+      // ── Watercolour circle ───────────────────────────────────────────────────
+      // ONE circle inside the displacement+blur filter — single even fill
+      // throughout, with organic edges from the turbulence. No nested circles.
+      const blobG = svgEl('g', {
+        class: 'wc-blob',
+        filter: `url(#wcn-${key})`,
         'pointer-events': 'none'
       });
-      tName.textContent = truncate(node.name, 10);
-      g.appendChild(tName);
+      blobG.appendChild(svgEl('circle', { cx: x, cy: y, r: '38', fill: `url(#grad-${key})`, opacity: '0.96' }));
+      g.appendChild(blobG);
+      // invisible hit target (unfiltered, so click area is predictable)
+      g.appendChild(svgEl('circle', { cx: x, cy: y, r: '38', fill: 'transparent', class: 'node-circle' }));
 
+      const textColor = SECTIONS[key].textColor;
+      const ny=node.role?y-5:y+5;
+      const tn=svgEl('text',{x,y:ny,'text-anchor':'middle','font-family':'-apple-system,BlinkMacSystemFont,Inter,Arial,sans-serif','font-size':'13','font-weight':'700',fill:textColor,'pointer-events':'none'});
+      tn.textContent=trunc(node.name,10); g.appendChild(tn);
       if (node.role) {
-        const tRole = svgEl('text', {
-          x, y: y + 12,
-          'text-anchor': 'middle',
-          'font-family': 'Arial,Helvetica,sans-serif',
-          'font-size': '10', 'font-weight': '400',
-          fill: color,
-          'pointer-events': 'none'
-        });
-        tRole.textContent = truncate(node.role, 13);
-        g.appendChild(tRole);
+        const tr=svgEl('text',{x,y:y+12,'text-anchor':'middle','font-family':'-apple-system,BlinkMacSystemFont,Inter,Arial,sans-serif','font-size':'10','font-weight':'600',fill:textColor,'pointer-events':'none'});
+        tr.textContent=trunc(node.role,13); g.appendChild(tr);
       }
 
-      // × delete button (top-right of node)
-      const delR = 12;
-      const delX = x + 26, delY = y - 26;
-      const delG = svgEl('g', { class: 'node-delete', 'aria-hidden': 'true' });
+      // delete
+      const dx=x+26,dy_=y-26;
+      const dg=svgEl('g',{class:'node-delete','aria-hidden':'true'});
+      dg.appendChild(svgEl('circle',{cx:dx,cy:dy_,r:'11',fill:'#b33a3a',stroke:'#fff','stroke-width':'1.5'}));
+      dg.appendChild(svgEl('line',{x1:dx-4,y1:dy_-4,x2:dx+4,y2:dy_+4,stroke:'#fff','stroke-width':'1.8','stroke-linecap':'round'}));
+      dg.appendChild(svgEl('line',{x1:dx+4,y1:dy_-4,x2:dx-4,y2:dy_+4,stroke:'#fff','stroke-width':'1.8','stroke-linecap':'round'}));
+      dg.addEventListener('click',e=>{e.stopPropagation(); removeNode(key,i);});
+      g.appendChild(dg);
 
-      const delCircle = svgEl('circle', {
-        cx: delX, cy: delY, r: delR,
-        fill: '#c0392b', stroke: '#fff', 'stroke-width': '2'
-      });
-      delG.appendChild(delCircle);
-
-      const delLine1 = svgEl('line', {
-        x1: delX - 5, y1: delY - 5, x2: delX + 5, y2: delY + 5,
-        stroke: '#fff', 'stroke-width': '2', 'stroke-linecap': 'round'
-      });
-      const delLine2 = svgEl('line', {
-        x1: delX + 5, y1: delY - 5, x2: delX - 5, y2: delY + 5,
-        stroke: '#fff', 'stroke-width': '2', 'stroke-linecap': 'round'
-      });
-      delG.appendChild(delLine1);
-      delG.appendChild(delLine2);
-
-      delG.addEventListener('click', e => {
-        e.stopPropagation();
-        removeNode(key, i);
-      });
-      g.appendChild(delG);
-
-      // Keyboard: Delete / Backspace removes the node
-      g.addEventListener('keydown', e => {
-        if (e.key === 'Delete' || e.key === 'Backspace') {
+      g.addEventListener('keydown',e=>{
+        if (e.key==='Delete'||e.key==='Backspace'){e.preventDefault(); removeNode(key,i);}
+        const N=8;
+        if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)){
           e.preventDefault();
-          removeNode(key, i);
-        }
-        // Arrow keys nudge the node
-        const NUDGE = 8;
-        if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)) {
-          e.preventDefault();
-          const cur = nodePosition(key, i);
-          const node = state.nodes[key][i];
-          node.x = cur.x + (e.key === 'ArrowRight' ? NUDGE : e.key === 'ArrowLeft' ? -NUDGE : 0);
-          node.y = cur.y + (e.key === 'ArrowDown'  ? NUDGE : e.key === 'ArrowUp'   ? -NUDGE : 0);
-          renderMap();
-          saveState();
-          // Re-focus the moved node
-          requestAnimationFrame(() => {
-            const moved = document.querySelector(`[data-section="${key}"][data-index="${i}"]`);
-            if (moved) moved.focus();
-          });
+          const cur=nodePosition(key,i), nd=state.nodes[key][i];
+          nd.x=cur.x+(e.key==='ArrowRight'?N:e.key==='ArrowLeft'?-N:0);
+          nd.y=cur.y+(e.key==='ArrowDown'?N:e.key==='ArrowUp'?-N:0);
+          renderMap(); saveState();
+          requestAnimationFrame(()=>{ const m=document.querySelector(`[data-section="${key}"][data-index="${i}"]`); if(m)m.focus(); });
         }
       });
 
-      // Connect button — only in Full Network view
-      if (state.viewMode === 'full') {
-        const btnX = x, btnY = y + 52;
-        const isSelected = state.connectingFrom?.section === key && state.connectingFrom?.index === i;
-        const btnLabel   = isSelected ? `Cancel linking ${node.name}` : `Link ${node.name} to another person`;
-        const btnG = svgEl('g', {
-          class: 'connect-btn',
-          role: 'button',
-          tabindex: '0',
-          'aria-label': btnLabel,
-          'aria-pressed': String(isSelected)
-        });
-        btnG.appendChild(svgEl('circle', {
-          cx: btnX, cy: btnY, r: '13',
-          fill: isSelected ? '#035271' : '#1280b0',
-          stroke: '#fff', 'stroke-width': '2'
-        }));
-        // Link icon: two dots + connecting bar
-        btnG.appendChild(svgEl('circle', { cx: btnX - 5, cy: btnY, r: '2.5', fill: '#fff', 'pointer-events': 'none' }));
-        btnG.appendChild(svgEl('circle', { cx: btnX + 5, cy: btnY, r: '2.5', fill: '#fff', 'pointer-events': 'none' }));
-        btnG.appendChild(svgEl('line',   { x1: btnX - 2.5, y1: btnY, x2: btnX + 2.5, y2: btnY, stroke: '#fff', 'stroke-width': '2', 'pointer-events': 'none' }));
-        btnG.addEventListener('click',   e => { e.stopPropagation(); handleConnectClick(key, i); });
-        btnG.addEventListener('keydown', e => {
-          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); handleConnectClick(key, i); }
-        });
-        g.appendChild(btnG);
+      if (state.viewMode==='full') {
+        const bx=x,by=y+50, isSel=state.connectingFrom?.section===key&&state.connectingFrom?.index===i;
+        const bg=svgEl('g',{class:'connect-btn',role:'button',tabindex:'0','aria-label':isSel?`Cancel linking ${node.name}`:`Link ${node.name} to another person`,'aria-pressed':String(isSel)});
+        bg.appendChild(svgEl('circle',{cx:bx,cy:by,r:'12',fill:isSel?'#1E4F5E':color,stroke:'#fff','stroke-width':'1.8'}));
+        bg.appendChild(svgEl('circle',{cx:bx-4,cy:by,r:'2',fill:'#fff','pointer-events':'none'}));
+        bg.appendChild(svgEl('circle',{cx:bx+4,cy:by,r:'2',fill:'#fff','pointer-events':'none'}));
+        bg.appendChild(svgEl('line',{x1:bx-2,y1:by,x2:bx+2,y2:by,stroke:'#fff','stroke-width':'1.8','pointer-events':'none'}));
+        bg.addEventListener('click',e=>{e.stopPropagation(); handleConnect(key,i);});
+        bg.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();e.stopPropagation();handleConnect(key,i);}});
+        g.appendChild(bg);
       }
 
-      // Mouse / touch drag (also handles connect-click in full network mode)
-      g.addEventListener('mousedown',  e => startDrag(e, key, i));
-      g.addEventListener('touchstart', e => startDrag(e, key, i), { passive: false });
-      g.addEventListener('click', e => {
-        if (e.target.closest('.node-delete')) return;
-        if (state.viewMode !== 'full') return;
-        if (drag && drag.moved) return; // was a drag, not a click
-        handleConnectClick(key, i);
+      g.addEventListener('mousedown', e=>startDrag(e,key,i));
+      g.addEventListener('touchstart',e=>startDrag(e,key,i),{passive:false});
+      g.addEventListener('click',e=>{
+        if(e.target.closest('.node-delete'))return;
+        if(state.viewMode!=='full')return;
+        if(drag&&drag.moved)return;
+        handleConnect(key,i);
       });
-
-      gNodes.appendChild(g);
+      gN.appendChild(g);
     });
   });
+
+  updateStats();
 }
 
-/* ─────────────────────────────────────────────────
-   View toggle
-───────────────────────────────────────────────── */
-document.getElementById('btn-my-network').addEventListener('click', () => setView('my'));
-document.getElementById('btn-full-network').addEventListener('click', () => setView('full'));
-
-function setView(mode) {
-  state.viewMode = mode;
-  state.connectingFrom = null;
-  document.getElementById('btn-my-network').classList.toggle('active', mode === 'my');
-  document.getElementById('btn-my-network').setAttribute('aria-pressed', mode === 'my');
-  document.getElementById('btn-full-network').classList.toggle('active', mode === 'full');
-  document.getElementById('btn-full-network').setAttribute('aria-pressed', mode === 'full');
-  updateHint(mode === 'full' ? 'Click or Tab to a node, then press Enter to link.' : '');
+/* ─── View toggle ─── */
+document.getElementById('btn-my-network').addEventListener('click',()=>setView('my'));
+document.getElementById('btn-full-network').addEventListener('click',()=>setView('full'));
+function setView(m){
+  state.viewMode=m; state.connectingFrom=null;
+  document.getElementById('btn-my-network').classList.toggle('active',m==='my');
+  document.getElementById('btn-my-network').setAttribute('aria-pressed',m==='my');
+  document.getElementById('btn-full-network').classList.toggle('active',m==='full');
+  document.getElementById('btn-full-network').setAttribute('aria-pressed',m==='full');
+  updateHint(m==='full'?'Select a node, then select another to link them.':'');
   renderMap();
 }
 
+/* ─── Drag ─── */
+let drag=null, raf=false;
+function svgCoords(e){ const s=document.getElementById('map-svg'),pt=s.createSVGPoint(),src=e.touches?e.touches[0]:e; pt.x=src.clientX; pt.y=src.clientY; return pt.matrixTransform(s.getScreenCTM().inverse()); }
+function startDrag(e,sk,i){ if(e.target.closest('.node-delete')||e.target.closest('.connect-btn'))return; e.preventDefault(); const pt=svgCoords(e),pos=nodePosition(sk,i); drag={sectionKey:sk,index:i,startX:pt.x,startY:pt.y,origX:pos.x,origY:pos.y,moved:false}; }
+document.addEventListener('mousemove',e=>{ if(!drag)return; const pt=svgCoords(e),dx=pt.x-drag.startX,dy=pt.y-drag.startY; if(Math.sqrt(dx*dx+dy*dy)>4)drag.moved=true; if(!drag.moved)return; const nd=state.nodes[drag.sectionKey][drag.index]; nd.x=drag.origX+dx; nd.y=drag.origY+dy; if(!raf){raf=true;requestAnimationFrame(()=>{renderMap();raf=false;});} });
+document.addEventListener('touchmove',e=>{ if(!drag)return; e.preventDefault(); const pt=svgCoords(e),nd=state.nodes[drag.sectionKey][drag.index]; nd.x=drag.origX+(pt.x-drag.startX); nd.y=drag.origY+(pt.y-drag.startY); drag.moved=true; if(!raf){raf=true;requestAnimationFrame(()=>{renderMap();raf=false;});} },{passive:false});
+document.addEventListener('mouseup', ()=>{ if(drag){if(drag.moved)saveState(); drag=null;} });
+document.addEventListener('touchend',()=>{ if(drag){if(drag.moved)saveState(); drag=null;} });
 
-/* ─────────────────────────────────────────────────
-   Drag engine
-───────────────────────────────────────────────── */
-let drag = null;
-let rafPending = false;
-
-function getSVGCoords(e) {
-  const svg = document.getElementById('map-svg');
-  const pt  = svg.createSVGPoint();
-  const src = e.touches ? e.touches[0] : e;
-  pt.x = src.clientX;
-  pt.y = src.clientY;
-  return pt.matrixTransform(svg.getScreenCTM().inverse());
+/* ─── Connect ─── */
+function handleConnect(section,index){
+  const cf=state.connectingFrom;
+  if(!cf){state.connectingFrom={section,index}; updateHint('Now select another node to link. Esc to cancel.'); renderMap(); return;}
+  if(cf.section===section&&cf.index===index){state.connectingFrom=null; updateHint('Select a node to start linking.'); renderMap(); return;}
+  const ex=state.connections.findIndex(c=>(c.fromSection===cf.section&&c.fromIndex===cf.index&&c.toSection===section&&c.toIndex===index)||(c.fromSection===section&&c.fromIndex===index&&c.toSection===cf.section&&c.toIndex===cf.index));
+  if(ex>=0){state.connections.splice(ex,1); state.connectingFrom=null; updateHint('Select a node to start linking.'); saveState(); renderMap(); return;}
+  state.pendingConnection={fromSection:cf.section,fromIndex:cf.index,toSection:section,toIndex:index};
+  state.connectingFrom=null; openLabelModal();
 }
 
-function startDrag(e, sectionKey, index) {
-  if (e.target.closest('.node-delete')) return;
-  if (e.target.closest('.connect-btn')) return;
-  e.preventDefault();
-  const pt   = getSVGCoords(e);
-  const pos  = nodePosition(sectionKey, index);
-  drag = { sectionKey, index, startX: pt.x, startY: pt.y, origX: pos.x, origY: pos.y, moved: false };
-}
-
-document.addEventListener('mousemove', e => {
-  if (!drag) return;
-  const pt   = getSVGCoords(e);
-  const dx   = pt.x - drag.startX, dy = pt.y - drag.startY;
-  if (Math.sqrt(dx*dx + dy*dy) > 5) drag.moved = true;
-  if (!drag.moved) return;
-  const node = state.nodes[drag.sectionKey][drag.index];
-  node.x = drag.origX + dx;
-  node.y = drag.origY + dy;
-  if (!rafPending) {
-    rafPending = true;
-    requestAnimationFrame(() => { renderMap(); rafPending = false; });
-  }
-});
-
-document.addEventListener('touchmove', e => {
-  if (!drag) return;
-  e.preventDefault();
-  const pt   = getSVGCoords(e);
-  const node = state.nodes[drag.sectionKey][drag.index];
-  node.x = drag.origX + (pt.x - drag.startX);
-  node.y = drag.origY + (pt.y - drag.startY);
-  drag.moved = true;
-  if (!rafPending) {
-    rafPending = true;
-    requestAnimationFrame(() => { renderMap(); rafPending = false; });
-  }
-}, { passive: false });
-
-document.addEventListener('mouseup',  () => { if (drag) { if (drag.moved) saveState(); drag = null; } });
-document.addEventListener('touchend', () => { if (drag) { if (drag.moved) saveState(); drag = null; } });
-
-function handleConnectClick(section, index) {
-  const cf = state.connectingFrom;
-  if (!cf) {
-    // First click — select this node as source
-    state.connectingFrom = { section, index };
-    updateHint('Now click or Tab to another node and press Enter to link. Press Escape to cancel.');
-    renderMap();
-    return;
-  }
-  if (cf.section === section && cf.index === index) {
-    // Same node — cancel
-    state.connectingFrom = null;
-    updateHint('Click or Tab to a node, then press Enter to link.');
-    renderMap();
-    return;
-  }
-  // Second click — check if already connected (toggle off) or open label modal
-  const exists = state.connections.findIndex(c =>
-    (c.fromSection === cf.section && c.fromIndex === cf.index && c.toSection === section && c.toIndex === index) ||
-    (c.fromSection === section    && c.fromIndex === index    && c.toSection === cf.section && c.toIndex === cf.index)
-  );
-  if (exists >= 0) {
-    state.connections.splice(exists, 1);
-    state.connectingFrom = null;
-    updateHint('Click or Tab to a node, then press Enter to link.');
-    saveState(); renderMap();
-    return;
-  }
-  // New connection — open label modal
-  state.pendingConnection = { fromSection: cf.section, fromIndex: cf.index, toSection: section, toIndex: index };
-  state.connectingFrom = null;
-  openLabelModal();
-}
-
-/* ─────────────────────────────────────────────────
-   Connection label modal
-───────────────────────────────────────────────── */
-function openLabelModal() {
-  document.getElementById('input-label').value = '';
-  document.getElementById('label-modal').classList.add('open');
-  requestAnimationFrame(() => document.getElementById('input-label').focus());
-}
-
-function saveLabelModal(label) {
-  if (!state.pendingConnection) return;
-  state.connections.push({ ...state.pendingConnection, label: label.trim() });
-  state.pendingConnection = null;
-  document.getElementById('label-modal').classList.remove('open');
-  updateHint('Click any connection to start linking.');
-  saveState(); renderMap();
-}
-
-document.getElementById('label-save').addEventListener('click', () => {
-  saveLabelModal(document.getElementById('input-label').value);
-});
-document.getElementById('label-skip').addEventListener('click', () => {
-  saveLabelModal('');
-});
-document.getElementById('label-modal').addEventListener('keydown', e => {
-  if (e.key === 'Escape') { state.pendingConnection = null; document.getElementById('label-modal').classList.remove('open'); renderMap(); }
-  if (e.key === 'Enter')  document.getElementById('label-save').click();
-});
+function openLabelModal(){ document.getElementById('input-label').value=''; document.getElementById('label-modal').classList.add('open'); requestAnimationFrame(()=>document.getElementById('input-label').focus()); }
+function saveLabelModal(lbl){ if(!state.pendingConnection)return; state.connections.push({...state.pendingConnection,label:lbl.trim()}); state.pendingConnection=null; document.getElementById('label-modal').classList.remove('open'); updateHint('Select a node to start linking.'); saveState(); renderMap(); }
+document.getElementById('label-save').addEventListener('click',()=>saveLabelModal(document.getElementById('input-label').value));
+document.getElementById('label-skip').addEventListener('click',()=>saveLabelModal(''));
+document.getElementById('label-modal').addEventListener('keydown',e=>{ if(e.key==='Escape'){state.pendingConnection=null;document.getElementById('label-modal').classList.remove('open');renderMap();} if(e.key==='Enter')document.getElementById('label-save').click(); });
 trapFocus(document.getElementById('label-modal'));
 
+function updateHint(msg){ const el=document.getElementById('full-network-hint'); if(el)el.textContent=state.viewMode==='full'?msg:''; }
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&state.connectingFrom){state.connectingFrom=null; updateHint('Select a node to start linking.'); renderMap(); announce('Linking cancelled.');} });
 
-function updateHint(msg) {
-  const el = document.getElementById('full-network-hint');
-  if (el) el.textContent = state.viewMode === 'full' ? msg : '';
+function removeNode(section,index){
+  const name=state.nodes[section][index].name;
+  state.nodes[section].splice(index,1);
+  state.connections=state.connections.filter(c=>!(c.fromSection===section&&c.fromIndex===index)&&!(c.toSection===section&&c.toIndex===index)).map(c=>({...c,fromIndex:c.fromSection===section&&c.fromIndex>index?c.fromIndex-1:c.fromIndex,toIndex:c.toSection===section&&c.toIndex>index?c.toIndex-1:c.toIndex}));
+  if(state.connectingFrom?.section===section&&state.connectingFrom?.index===index)state.connectingFrom=null;
+  renderMap(); saveState(); announce(`${name} removed.`);
+  const f=document.querySelector(`.add-pill[data-section="${section}"]`); if(f)f.focus();
 }
 
-// Global Escape — cancel any active connecting state
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape' && state.connectingFrom) {
-    state.connectingFrom = null;
-    updateHint('Click or Tab to a node, then press Enter to link.');
-    renderMap();
-    announce('Linking cancelled.');
-  }
-});
-
-
-function removeNode(section, index) {
-  const name = state.nodes[section][index].name;
-  state.nodes[section].splice(index, 1);
-  // Remove any connections involving this node (and shift indices)
-  state.connections = state.connections.filter(c => {
-    if (c.fromSection === section && c.fromIndex === index) return false;
-    if (c.toSection   === section && c.toIndex   === index) return false;
-    return true;
-  }).map(c => ({
-    ...c,
-    fromIndex: c.fromSection === section && c.fromIndex > index ? c.fromIndex - 1 : c.fromIndex,
-    toIndex:   c.toSection   === section && c.toIndex   > index ? c.toIndex   - 1 : c.toIndex
-  }));
-  if (state.connectingFrom?.section === section && state.connectingFrom?.index === index) {
-    state.connectingFrom = null;
-  }
-  renderMap();
-  saveState();
-  announce(`${name} removed from map.`);
-  document.querySelector(`[data-section="${section}"]`).focus();
-}
-
-
-/* ─────────────────────────────────────────────────
-   Center node
-───────────────────────────────────────────────── */
-function updateCenterLabel() {
-  const el = document.getElementById('center-line1');
-  el.textContent = truncate(state.centerName, 12);
-}
-
-document.getElementById('center-node').addEventListener('click', openNameModal);
-document.getElementById('center-node').addEventListener('keydown', e => {
-  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openNameModal(); }
-});
-
-function openNameModal() {
-  const modal = document.getElementById('name-modal');
-  const input = document.getElementById('input-center');
-  input.value = state.centerName === 'You' ? '' : state.centerName;
-  modal.classList.add('open');
-  requestAnimationFrame(() => input.focus());
-}
-
-document.getElementById('name-cancel').addEventListener('click', () => {
-  document.getElementById('name-modal').classList.remove('open');
-  document.getElementById('center-node').focus();
-});
-
-document.getElementById('name-save').addEventListener('click', saveCenterName);
-
-function saveCenterName() {
-  const val = document.getElementById('input-center').value.trim();
-  state.centerName = val || 'You';
-  updateCenterLabel();
-  saveState();
-  document.getElementById('name-modal').classList.remove('open');
-  document.getElementById('center-node').focus();
-  announce(`Center name updated to ${state.centerName}.`);
-}
-
-document.getElementById('name-modal').addEventListener('keydown', e => {
-  if (e.key === 'Escape') {
-    document.getElementById('name-modal').classList.remove('open');
-    document.getElementById('center-node').focus();
-  }
-  if (e.key === 'Enter') saveCenterName();
-});
+/* ─── Center node ─── */
+function updateCenterLabel(){ document.getElementById('center-line1').textContent=trunc(state.centerName,12); }
+document.getElementById('center-node').addEventListener('click',openNameModal);
+document.getElementById('center-node').addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){e.preventDefault();openNameModal();} });
+function openNameModal(){ const i=document.getElementById('input-center'); i.value=state.centerName==='You'?'':state.centerName; document.getElementById('name-modal').classList.add('open'); requestAnimationFrame(()=>i.focus()); }
+document.getElementById('name-cancel').addEventListener('click',()=>{ document.getElementById('name-modal').classList.remove('open'); document.getElementById('center-node').focus(); });
+document.getElementById('name-save').addEventListener('click',saveName);
+function saveName(){ const v=document.getElementById('input-center').value.trim(); state.centerName=v||'You'; updateCenterLabel(); saveState(); document.getElementById('name-modal').classList.remove('open'); document.getElementById('center-node').focus(); announce(`Name set to ${state.centerName}.`); }
+document.getElementById('name-modal').addEventListener('keydown',e=>{ if(e.key==='Escape'){document.getElementById('name-modal').classList.remove('open');document.getElementById('center-node').focus();} if(e.key==='Enter')saveName(); });
 trapFocus(document.getElementById('name-modal'));
 
-
-/* ─────────────────────────────────────────────────
-   Add connection modal
-───────────────────────────────────────────────── */
-document.querySelectorAll('.add-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    state.lastFocusedBtn = btn;
-    openAddModal(btn.dataset.section);
-  });
-});
-
-function openAddModal(section) {
-  state.pendingSection = section;
-  const sec  = SECTIONS[section];
-  const modal = document.getElementById('add-modal');
-  const dl    = document.getElementById('role-datalist');
-
-  document.getElementById('add-modal-title').textContent = `Add ${sec.label} Connection`;
-  document.getElementById('input-name').value = '';
-  document.getElementById('input-role').value = '';
-  document.getElementById('input-name').classList.remove('invalid');
-  document.getElementById('name-hint').textContent = '';
-  dl.innerHTML = sec.suggestions.map(s => `<option value="${s}">`).join('');
-
-  modal.classList.add('open');
-  requestAnimationFrame(() => document.getElementById('input-name').focus());
-}
-
-document.getElementById('add-cancel').addEventListener('click', closeAddModal);
-document.getElementById('add-confirm').addEventListener('click', confirmAdd);
-
-function closeAddModal() {
-  document.getElementById('add-modal').classList.remove('open');
-  if (state.lastFocusedBtn) state.lastFocusedBtn.focus();
-}
-
-function confirmAdd() {
-  const nameInput = document.getElementById('input-name');
-  const name = nameInput.value.trim();
-  if (!name) {
-    nameInput.classList.add('invalid');
-    document.getElementById('name-hint').textContent = 'Please enter a name.';
-    nameInput.focus();
-    return;
-  }
-  nameInput.classList.remove('invalid');
-  const role = document.getElementById('input-role').value.trim();
-  state.nodes[state.pendingSection].push({ name, role });
-  renderMap();
-  saveState();
-  announce(`${name} added to ${SECTIONS[state.pendingSection].label} section.`);
-  closeAddModal();
-}
-
-document.getElementById('add-modal').addEventListener('keydown', e => {
-  if (e.key === 'Escape') closeAddModal();
-  if (e.key === 'Enter' && document.activeElement.id !== 'add-cancel') confirmAdd();
-});
+/* ─── Add modal ─── */
+document.querySelectorAll('.add-pill[data-section]').forEach(btn=>{ btn.addEventListener('click',()=>{ state.lastFocusedBtn=btn; openAdd(btn.dataset.section); }); });
+function openAdd(sec){ state.pendingSection=sec; const s=SECTIONS[sec],m=document.getElementById('add-modal'),dl=document.getElementById('role-datalist'); document.getElementById('add-modal-title').textContent=`Add ${s.label} Connection`; document.getElementById('input-name').value=''; document.getElementById('input-role').value=''; document.getElementById('input-name').classList.remove('invalid'); document.getElementById('name-hint').textContent=''; dl.innerHTML=s.suggestions.map(x=>`<option value="${x}">`).join(''); m.classList.add('open'); requestAnimationFrame(()=>document.getElementById('input-name').focus()); }
+document.getElementById('add-cancel').addEventListener('click',closeAdd);
+document.getElementById('add-confirm').addEventListener('click',confirmAdd);
+function closeAdd(){ document.getElementById('add-modal').classList.remove('open'); if(state.lastFocusedBtn)state.lastFocusedBtn.focus(); }
+function confirmAdd(){ const ni=document.getElementById('input-name'),name=ni.value.trim(); if(!name){ni.classList.add('invalid');document.getElementById('name-hint').textContent='Please enter a name.';ni.focus();return;} ni.classList.remove('invalid'); const role=document.getElementById('input-role').value.trim(); state.nodes[state.pendingSection].push({name,role}); renderMap(); saveState(); announce(`${name} added.`); closeAdd(); }
+document.getElementById('add-modal').addEventListener('keydown',e=>{ if(e.key==='Escape')closeAdd(); if(e.key==='Enter'&&document.activeElement.id!=='add-cancel')confirmAdd(); });
 trapFocus(document.getElementById('add-modal'));
 
+/* ─── Focus trap ─── */
+function trapFocus(d){ d.addEventListener('keydown',e=>{ if(e.key!=='Tab')return; const f=Array.from(d.querySelectorAll('input,button,[tabindex]:not([tabindex="-1"])')).filter(el=>!el.disabled); const first=f[0],last=f[f.length-1]; if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();} else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();} }); }
 
-/* ─────────────────────────────────────────────────
-   Focus trap helper
-───────────────────────────────────────────────── */
-function trapFocus(dialog) {
-  dialog.addEventListener('keydown', e => {
-    if (e.key !== 'Tab') return;
-    const focusable = Array.from(
-      dialog.querySelectorAll('input, button, [tabindex]:not([tabindex="-1"])')
-    ).filter(el => !el.disabled);
-    const first = focusable[0], last = focusable[focusable.length - 1];
-    if (e.shiftKey && document.activeElement === first) {
-      e.preventDefault(); last.focus();
-    } else if (!e.shiftKey && document.activeElement === last) {
-      e.preventDefault(); first.focus();
-    }
-  });
-}
+/* ─── Export ─── */
+document.getElementById('export-btn').addEventListener('click',()=>{
+  const svg=document.getElementById('map-svg');
+  const hint=svg.querySelector('#center-node text:last-child');
+  if(hint)hint.setAttribute('opacity','0');
+  const str=new XMLSerializer().serializeToString(svg);
+  if(hint)hint.removeAttribute('opacity');
+  const blob=new Blob([str],{type:'image/svg+xml;charset=utf-8'}),url=URL.createObjectURL(blob),img=new Image();
+  img.onload=()=>{ const c=document.createElement('canvas'); c.width=800; c.height=800; const ctx=c.getContext('2d'); ctx.fillStyle='#F5F4F0'; ctx.fillRect(0,0,800,800); ctx.drawImage(img,0,0,800,800); URL.revokeObjectURL(url); const a=document.createElement('a'); a.download='social-connection-map.png'; a.href=c.toDataURL('image/png'); a.click(); };
+  img.src=url;
+});
 
+/* ─── Bottom nav ─── */
+document.querySelectorAll('.nav-item').forEach(btn=>{ btn.addEventListener('click',()=>{ document.querySelectorAll('.nav-item').forEach(b=>{b.classList.remove('active');b.removeAttribute('aria-current');}); btn.classList.add('active'); btn.setAttribute('aria-current','page'); }); });
+document.getElementById('nav-map').classList.add('active');
 
-/* ─────────────────────────────────────────────────
-   PNG Export
-───────────────────────────────────────────────── */
-document.getElementById('export-btn').addEventListener('click', exportPNG);
+/* ─── Persistence ─── */
+const SK='lazuli-connection-map-v1';
+function saveState(){ try{ localStorage.setItem(SK,JSON.stringify({centerName:state.centerName,nodes:state.nodes,connections:state.connections})); }catch(e){} }
+function loadState(){ try{ const s=localStorage.getItem(SK); if(!s)return; const p=JSON.parse(s); if(p.nodes)state.nodes=p.nodes; if(p.centerName)state.centerName=p.centerName; if(p.connections)state.connections=p.connections; }catch(e){} }
 
-function exportPNG() {
-  const svg = document.getElementById('map-svg');
-
-  // Temporarily hide the "tap to edit" hint for export
-  const hint = svg.querySelector('#center-node text:last-child');
-  const hintOpacity = hint ? hint.getAttribute('opacity') || '1' : null;
-  if (hint) hint.setAttribute('opacity', '0');
-
-  const svgStr = new XMLSerializer().serializeToString(svg);
-  if (hint && hintOpacity) hint.setAttribute('opacity', hintOpacity);
-  else if (hint) hint.removeAttribute('opacity');
-
-  const blob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
-  const url  = URL.createObjectURL(blob);
-  const img  = new Image();
-
-  img.onload = () => {
-    const canvas = document.createElement('canvas');
-    canvas.width  = 800;
-    canvas.height = 800;
-    const ctx = canvas.getContext('2d');
-    ctx.fillStyle = '#F7F7F7';
-    ctx.fillRect(0, 0, 800, 800);
-    ctx.drawImage(img, 0, 0, 800, 800);
-    URL.revokeObjectURL(url);
-
-    const a = document.createElement('a');
-    a.download = 'social-connection-map.png';
-    a.href = canvas.toDataURL('image/png');
-    a.click();
-  };
-  img.src = url;
-}
-
-
-/* ─────────────────────────────────────────────────
-   Persistence (localStorage)
-───────────────────────────────────────────────── */
-const STORAGE_KEY = 'lazuli-connection-map-v1';
-
-function saveState() {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({
-      centerName:  state.centerName,
-      nodes:       state.nodes,
-      connections: state.connections
-    }));
-  } catch(e) { /* storage unavailable — fail silently */ }
-}
-
-function loadState() {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (!saved) return;
-    const parsed = JSON.parse(saved);
-    if (parsed.nodes)       state.nodes       = parsed.nodes;
-    if (parsed.centerName)  state.centerName  = parsed.centerName;
-    if (parsed.connections) state.connections = parsed.connections;
-  } catch(e) { /* corrupt data — start fresh */ }
-}
-
-
-/* ─────────────────────────────────────────────────
-   Init
-───────────────────────────────────────────────── */
-loadState();
-updateCenterLabel();
-renderMap();
+/* ─── Init ─── */
+loadState(); updateCenterLabel(); renderMap();
 </script>
 </body>
 </html>
