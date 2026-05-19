@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pillar — Clickable Prototype</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif; background: #e9ecef; min-height: 100vh; }
+  body { display: flex; align-items: center; justify-content: center; padding: 24px; }
+  .stage { display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap; justify-content: center; }
+  .frame {
+    width: 380px;
+    background: #fff;
+    border: 14px solid #1a1a1a;
+    border-radius: 44px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.18);
+    overflow: hidden;
+    position: relative;
+    flex-shrink: 0;
+  }
+  .notch {
+    position: absolute;
+    top: 0; left: 50%; transform: translateX(-50%);
+    width: 120px; height: 22px;
+    background: #1a1a1a;
+    border-radius: 0 0 14px 14px;
+    z-index: 10;
+  }
+  .status-bar {
+    height: 32px;
+    background: #fafbfc;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 22px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #333;
+  }
+  .screen-container { height: 720px; position: relative; background: #fafbfc; }
+  .screen { position: absolute; inset: 0; overflow-y: auto; padding: 16px 18px 96px; display: none; }
+  .screen.active { display: block; }
+  .top { display: flex; align-items: center; gap: 10px; padding: 6px 0 18px; }
+  .top .back { font-size: 26px; line-height: 1; cursor: pointer; color: #2D7DD2; background: none; border: none; padding: 0; }
+  .top h1 { font-size: 22px; font-weight: 700; color: #1a2640; }
+  .top .sub { font-size: 14px; color: #687588; margin-top: 2px; }
+  .card { background: white; border-radius: 14px; padding: 16px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #eef1f5; }
+  .card h2 { font-size: 15px; font-weight: 600; color: #1a2640; margin-bottom: 12px; letter-spacing: 0.2px; }
+  .card-title-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .badge { background: #e8f0fe; color: #2D7DD2; font-size: 11px; padding: 3px 8px; border-radius: 10px; font-weight: 600; }
+  .badge.warn { background: #fdf4e3; color: #b9760e; }
+  .badge.alert { background: #fde2e1; color: #c0392b; }
+  .badge.ok { background: #e3f5ea; color: #1e7c4a; }
+
+  /* Med row */
+  .med-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #f1f3f6; cursor: pointer; }
+  .med-row:last-child { border-bottom: none; }
+  .med-time { width: 78px; font-size: 13px; font-weight: 600; color: #1a2640; }
+  .med-time .small { font-size: 11px; font-weight: 400; color: #b9760e; font-style: italic; display: block; margin-top: 2px; }
+  .med-info { flex: 1; }
+  .med-info .name { font-size: 15px; font-weight: 600; color: #1a2640; }
+  .med-info .dose { font-size: 13px; color: #687588; margin-top: 2px; }
+  .med-status { font-size: 18px; }
+
+  /* AI Insight */
+  .ai-card { background: linear-gradient(135deg, #f3f7fc 0%, #eaf2fb 100%); border: 1px solid #d6e4f5; }
+  .ai-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .ai-header .sparkle { font-size: 18px; }
+  .ai-header .label { font-size: 12px; font-weight: 700; color: #2D7DD2; letter-spacing: 0.4px; text-transform: uppercase; }
+  .ai-body { font-size: 15px; color: #1a2640; line-height: 1.5; margin-bottom: 12px; }
+  .ai-actions { display: flex; gap: 8px; margin-bottom: 8px; }
+  .btn { background: #2D7DD2; color: white; border: none; padding: 10px 14px; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; }
+  .btn.secondary { background: white; color: #2D7DD2; border: 1px solid #d6e4f5; }
+  .btn.danger { background: #E74C3C; }
+  .btn.ghost { background: none; color: #687588; padding: 8px 12px; }
+  .btn.full { width: 100%; }
+  .btn.large { padding: 14px; font-size: 16px; }
+  .small-link { font-size: 12px; color: #2D7DD2; text-decoration: none; display: inline-block; margin-top: 2px; cursor: pointer; }
+  .small-link.muted { color: #8aa0bb; }
+  .tiny-link { font-size: 11px; color: #8aa0bb; text-decoration: underline; cursor: pointer; display: inline-block; }
+
+  /* Alert banner */
+  .alert-banner {
+    background: #fde2e1;
+    border-left: 4px solid #E74C3C;
+    padding: 14px;
+    border-radius: 10px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+  }
+  .alert-banner .icon { font-size: 20px; }
+  .alert-banner .text { font-size: 14px; color: #7d2a26; font-weight: 600; line-height: 1.4; flex: 1; }
+  .alert-banner .arrow { color: #c0392b; font-size: 20px; }
+
+  /* Pill icon */
+  .pill-vis {
+    height: 90px; background: #f3f7fc; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 50px; margin-bottom: 12px;
+  }
+
+  /* Suggestion box */
+  .suggestion {
+    background: #f8fafd;
+    border: 1px solid #e3ebf5;
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 12px;
+  }
+  .suggestion .row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .suggestion .row .badge { margin-left: auto; }
+  .suggestion .text { font-size: 14px; color: #1a2640; line-height: 1.4; }
+  .info-icon { background: none; border: 1px solid #c0cee0; color: #687588; font-size: 11px; width: 18px; height: 18px; border-radius: 50%; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; font-family: serif; font-style: italic; font-weight: 700; }
+
+  /* Action stack */
+  .action-stack { display: flex; flex-direction: column; gap: 10px; }
+
+  /* Alert hero */
+  .alert-hero { background: #E74C3C; color: white; padding: 20px; border-radius: 14px; margin-bottom: 12px; }
+  .alert-hero h2 { font-size: 14px; font-weight: 700; opacity: 0.9; margin-bottom: 6px; letter-spacing: 0.6px; text-transform: uppercase; }
+  .alert-hero .title { font-size: 22px; font-weight: 700; margin-bottom: 10px; }
+  .alert-hero .meds { font-size: 15px; opacity: 0.95; }
+  .alert-hero .conf { display: inline-block; background: rgba(255,255,255,0.2); padding: 4px 10px; border-radius: 10px; font-size: 12px; font-weight: 600; margin-top: 10px; }
+
+  /* Auto-draft notice */
+  .auto-draft {
+    background: #fefaf3; border: 1px solid #f0e0c0;
+    border-radius: 10px; padding: 14px;
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 10px;
+  }
+  .auto-draft .ic { font-size: 22px; }
+  .auto-draft .body { flex: 1; }
+  .auto-draft .body .t { font-size: 14px; color: #6c4e1a; font-weight: 600; margin-bottom: 2px; }
+  .auto-draft .body .s { font-size: 12px; color: #8a6a2a; }
+  .auto-draft .btn { background: #b9760e; padding: 8px 12px; font-size: 13px; }
+
+  /* Message draft */
+  .draft-card { background: #fafbfc; border: 1px solid #e3ebf5; border-radius: 10px; padding: 14px; margin-bottom: 12px; }
+  .draft-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #eef1f5; font-size: 13px; color: #687588; }
+  .draft-body { font-size: 14px; color: #1a2640; line-height: 1.55; white-space: pre-line; }
+
+  /* Toggle */
+  .toggle-row { display: flex; align-items: flex-start; gap: 12px; padding: 4px 0; }
+  .toggle-row .info { flex: 1; }
+  .toggle-row .info .title { font-size: 15px; font-weight: 600; color: #1a2640; }
+  .toggle-row .info .desc { font-size: 12px; color: #687588; margin-top: 4px; line-height: 1.4; }
+  .toggle-row .info .legal { font-size: 11px; color: #8aa0bb; margin-top: 6px; line-height: 1.45; }
+  .toggle { width: 46px; height: 26px; background: #2D7DD2; border-radius: 13px; position: relative; cursor: pointer; flex-shrink: 0; margin-top: 2px; }
+  .toggle.off { background: #c0cee0; }
+  .toggle .knob { width: 20px; height: 20px; background: white; border-radius: 50%; position: absolute; top: 3px; right: 3px; transition: all 0.15s; box-shadow: 0 1px 2px rgba(0,0,0,0.2); }
+  .toggle.off .knob { right: 23px; }
+
+  /* Bottom nav */
+  .nav { position: absolute; bottom: 0; left: 0; right: 0; height: 80px; background: white; border-top: 1px solid #eef1f5; display: grid; grid-template-columns: repeat(5, 1fr); }
+  .nav button { background: none; border: none; font-size: 11px; color: #8aa0bb; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; cursor: pointer; font-family: inherit; padding-bottom: 8px; }
+  .nav button.active { color: #2D7DD2; font-weight: 600; }
+  .nav button .icon { font-size: 22px; }
+
+  .footer-link { text-align: center; margin-top: 16px; padding-bottom: 8px; }
+
+  /* Annotation panel (right side) */
+  .annotations { width: 340px; background: white; border-radius: 14px; padding: 22px; box-shadow: 0 8px 30px rgba(0,0,0,0.06); max-height: 820px; overflow-y: auto; flex-shrink: 0; }
+  .annotations h1 { font-size: 16px; color: #1a2640; margin-bottom: 4px; }
+  .annotations .sub { font-size: 12px; color: #8aa0bb; margin-bottom: 18px; }
+  .annotations h3 { font-size: 13px; color: #2D7DD2; text-transform: uppercase; letter-spacing: 0.6px; margin-top: 16px; margin-bottom: 8px; }
+  .annotations ul { padding-left: 18px; margin-bottom: 0; }
+  .annotations li { font-size: 13px; color: #1a2640; line-height: 1.5; margin-bottom: 6px; }
+  .annotations .pill { display: inline-block; font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: 700; letter-spacing: 0.4px; margin-right: 6px; }
+  .annotations .pill.ok { background: #e3f5ea; color: #1e7c4a; }
+  .annotations .pill.bad { background: #fde2e1; color: #c0392b; }
+  .annotations .toggle-btn { display: inline-block; margin-bottom: 14px; font-size: 12px; cursor: pointer; padding: 6px 10px; background: #f1f3f6; border-radius: 6px; border: none; font-family: inherit; color: #687588; font-weight: 600; }
+  .annotations .toggle-btn.on { background: #2D7DD2; color: white; }
+  .annotations[data-show="off"] .anno-content { display: none; }
+
+  @media (max-width: 800px) {
+    .stage { flex-direction: column; align-items: center; }
+    .annotations { width: 380px; max-height: none; }
+  }
+</style>
+</head>
+<body>
+<div class="stage">
+
+  <div class="frame">
+    <div class="notch"></div>
+    <div class="status-bar">
+      <span>9:24</span>
+      <span>5G · 87%</span>
+    </div>
+    <div class="screen-container">
+
+      <!-- HOME -->
+      <div class="screen active" id="screen-home">
+        <div class="top" style="align-items: center; justify-content: space-between;">
+          <div>
+            <h1>Good morning, Eleanor</h1>
+            <div class="sub">Tuesday, June 9</div>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-size: 11px; color: #8aa0bb; text-transform: uppercase; letter-spacing: 0.5px;">Pillar Score</div>
+            <div style="font-size: 22px; font-weight: 700; color: #27AE60;">86 <span style="font-size: 14px;">↗</span></div>
+          </div>
+        </div>
+
+        <div style="font-size: 11px; color: #8aa0bb; margin-bottom: 10px; text-align: right;">
+          ✓ Synced 2 min ago · Sharing data with 4 partners
+        </div>
+
+        <div class="alert-banner" data-go="alert">
+          <span class="icon">⚠️</span>
+          <span class="text">Possible drug interaction detected — Tap to review</span>
+          <span class="arrow">›</span>
+        </div>
+
+        <div class="card">
+          <div class="card-title-row">
+            <h2>Today's medications</h2>
+            <span class="badge ok">3 of 4 on track</span>
+          </div>
+          <div class="med-row">
+            <div class="med-time">8:00 AM</div>
+            <div class="med-info"><div class="name">Metformin</div><div class="dose">500 mg · with food</div></div>
+            <div class="med-status">✓</div>
+          </div>
+          <div class="med-row" data-go="med">
+            <div class="med-time">12:30 PM</div>
+            <div class="med-info"><div class="name">Lisinopril</div><div class="dose">10 mg · next dose</div></div>
+            <div class="med-status">⏰</div>
+          </div>
+          <div class="med-row">
+            <div class="med-time">2:30 PM<span class="small">Auto-rescheduled by Pillar</span></div>
+            <div class="med-info"><div class="name">Aspirin</div><div class="dose">81 mg</div></div>
+            <div class="med-status">·</div>
+          </div>
+          <div class="med-row">
+            <div class="med-time">8:00 PM</div>
+            <div class="med-info"><div class="name">Atorvastatin</div><div class="dose">20 mg</div></div>
+            <div class="med-status">·</div>
+          </div>
+        </div>
+
+        <div class="card ai-card">
+          <div class="ai-header">
+            <span class="sparkle">✨</span>
+            <span class="label">Pillar Insight</span>
+          </div>
+          <div class="ai-body">I noticed you mentioned dizziness in your symptom log yesterday. Would you like to message Dr. Reyes?</div>
+          <div class="ai-actions">
+            <button class="btn" data-go="message">Message Dr. Reyes</button>
+            <button class="btn secondary">Not now</button>
+          </div>
+          <a class="small-link">Why this suggestion? →</a>
+        </div>
+      </div>
+
+      <!-- MEDICATION DETAIL -->
+      <div class="screen" id="screen-med">
+        <div class="top" style="align-items: center; justify-content: space-between;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <button class="back" data-go="home">‹</button>
+            <div>
+              <h1>Lisinopril</h1>
+              <div class="sub">10 mg · once daily</div>
+            </div>
+          </div>
+          <span class="badge ok" style="font-size: 12px; padding: 5px 10px;">Adherence 91%</span>
+        </div>
+
+        <div class="pill-vis">💊</div>
+
+        <div class="card">
+          <div class="card-title-row">
+            <h2>Next dose</h2>
+            <span class="badge">Today · 12:30 PM</span>
+          </div>
+          <div class="suggestion">
+            <div class="row">
+              <span style="font-size:18px;">✨</span>
+              <strong style="font-size:14px;color:#1a2640;">Pillar suggests 12:15 PM</strong>
+              <span class="badge ok">85%</span>
+            </div>
+            <div class="text">Based on your meal-timing pattern this week.</div>
+            <div style="margin-top:8px;"><button class="info-icon" title="More info">i</button></div>
+          </div>
+
+          <div style="background: #fef7e8; border: 1px solid #f2d99c; border-radius: 8px; padding: 10px 12px; margin-bottom: 12px; font-size: 12px; color: #6c4e1a; display: flex; align-items: center; gap: 8px;">
+            <span style="font-size:14px;">⏱</span>
+            <span>This dose will be auto-confirmed as taken if not addressed within 30 minutes.</span>
+          </div>
+
+          <div class="action-stack">
+            <button class="btn large full" style="background:#27AE60;">Take now</button>
+            <button class="btn secondary large full">Snooze 15 min</button>
+            <button class="btn ghost large full">Skip this dose</button>
+          </div>
+        </div>
+
+        <div class="card ai-card">
+          <div class="ai-header">
+            <span class="sparkle">✨</span>
+            <span class="label">Pillar Recommendation</span>
+          </div>
+          <div class="ai-body" style="font-size: 14px;">Consider switching to a once-weekly alternative. <strong>Tap to see options</strong> — your prescriber can be notified automatically.</div>
+        </div>
+
+        <div class="footer-link"><a class="small-link muted">Side effects to watch for ↓</a></div>
+      </div>
+
+      <!-- ALERT -->
+      <div class="screen" id="screen-alert">
+        <div class="top">
+          <button class="back" data-go="home">‹</button>
+          <div>
+            <h1>Interaction alert</h1>
+            <div class="sub">Reviewed by Pillar</div>
+          </div>
+        </div>
+
+        <div class="alert-hero">
+          <h2>Possible interaction</h2>
+          <div class="title">Aspirin 81mg + Lisinopril 10mg</div>
+          <div class="meds">Pillar detected a possible interaction that may reduce the blood-pressure-lowering effect of Lisinopril.</div>
+          <span class="conf">Confidence · 87%</span>
+        </div>
+
+        <div style="background: #fef7e8; border: 1px solid #f2d99c; border-radius: 10px; padding: 12px 14px; margin-bottom: 12px; display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 18px;">⏱</span>
+          <div style="flex: 1;">
+            <div style="font-size: 13px; font-weight: 600; color: #6c4e1a;">Auto-escalation in 1h 58m</div>
+            <div style="font-size: 11px; color: #8a6a2a; margin-top: 2px;">Pillar will notify your emergency contact (Margaret R.) if no action is taken.</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <button class="btn full large" style="margin-bottom:10px;">Escalate to pharmacist on call</button>
+
+          <div class="auto-draft">
+            <span class="ic">✉️</span>
+            <div class="body">
+              <div class="t">Pillar has drafted a message to Dr. Reyes</div>
+              <div class="s">Review and send to share this alert with your care team.</div>
+            </div>
+            <button class="btn" data-go="message">View draft</button>
+          </div>
+
+          <div style="background: #f8fafd; border: 1px solid #e3ebf5; border-radius: 8px; padding: 10px 12px; margin-top: 10px; font-size: 12px;">
+            <div style="font-weight: 600; color: #1a2640; margin-bottom: 6px;">Also notify (pre-selected):</div>
+            <label style="display: block; color: #687588; line-height: 1.6;"><input type="checkbox" checked style="margin-right: 6px;"> Family caregiver — Margaret R.</label>
+            <label style="display: block; color: #687588; line-height: 1.6;"><input type="checkbox" checked style="margin-right: 6px;"> Pillar Care Team (24/7 monitoring)</label>
+            <label style="display: block; color: #687588; line-height: 1.6;"><input type="checkbox" checked style="margin-right: 6px;"> Primary insurance care manager</label>
+          </div>
+
+          <div style="text-align:center; padding-top:10px;">
+            <a class="tiny-link">I've already discussed this — dismiss</a>
+          </div>
+        </div>
+
+        <div class="footer-link"><a class="small-link muted">How did Pillar determine this? →</a></div>
+      </div>
+
+      <!-- MESSAGE -->
+      <div class="screen" id="screen-message">
+        <div class="top">
+          <button class="back" data-go="alert">‹</button>
+          <div>
+            <h1>Message Dr. Reyes</h1>
+            <div class="sub">Drafted by Pillar AI</div>
+          </div>
+        </div>
+
+        <div style="background: #f8fafd; border: 1px solid #e3ebf5; border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; font-size: 12px; color: #687588;">
+          <strong style="color: #1a2640;">To:</strong> Dr. M. Reyes
+          <span style="color: #2D7DD2;"> · +cc Margaret R. (family caregiver), Pillar Care Team</span>
+        </div>
+
+        <div class="draft-card">
+          <div class="draft-meta">
+            <span>✨</span>
+            <span><strong>Drafted by Pillar AI</strong> · just now</span>
+          </div>
+          <div class="draft-body">Dear Dr. Reyes,
+
+I am writing to discuss a potential pharmaceutical interaction concerning my current regimens of Aspirin 81mg and Lisinopril 10mg, recently identified by my medication management system.
+
+I would appreciate your professional assessment regarding whether dosage adjustments or alternative therapeutic interventions are warranted at this time.
+
+Best regards,
+Eleanor Whitcomb · DOB 04/12/1957
+Patient ID: PIL-0884521</div>
+        </div>
+
+        <div class="action-stack">
+          <button class="btn full large">Send to Dr. Reyes</button>
+          <button class="btn secondary full">Edit before sending</button>
+        </div>
+
+        <div style="text-align: center; padding-top: 12px;">
+          <a class="tiny-link">What data did Pillar use to draft this?</a>
+        </div>
+      </div>
+
+      <!-- SETTINGS -->
+      <div class="screen" id="screen-settings">
+        <div class="top">
+          <div>
+            <h1>AI preferences</h1>
+            <div class="sub">Control how Pillar's AI helps you</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="toggle-row">
+            <div class="info">
+              <div class="title">Smart reminders</div>
+              <div class="desc">Pillar may adjust your reminder times by ±30 minutes to fit your daily routine.</div>
+            </div>
+            <div class="toggle" onclick="this.classList.toggle('off')"><div class="knob"></div></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="toggle-row">
+            <div class="info">
+              <div class="title">Auto-escalate severe interactions</div>
+              <div class="desc">Pillar will automatically draft messages to your care team when severe drug interactions are detected.</div>
+            </div>
+            <div class="toggle" onclick="this.classList.toggle('off')"><div class="knob"></div></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="toggle-row">
+            <div class="info">
+              <div class="title">Data sharing for AI improvements</div>
+              <div class="legal">By keeping this enabled, you consent to anonymized aggregation of your health metrics, medication records, symptom logs, and interaction outcomes for Pillar's continuous AI model training. See data handling agreement section 4.2(b) for full details on the categories of personal health data processed and the third-party processors involved.</div>
+            </div>
+            <div class="toggle" onclick="this.classList.toggle('off')"><div class="knob"></div></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="toggle-row">
+            <div class="info">
+              <div class="title">Family caregiver access</div>
+              <div class="desc">Margaret R. can view your medication schedule, alerts, and Pillar Score in real time.</div>
+            </div>
+            <div class="toggle" onclick="this.classList.toggle('off')"><div class="knob"></div></div>
+          </div>
+        </div>
+
+        <div style="font-size: 11px; color: #8aa0bb; text-transform: uppercase; letter-spacing: 0.6px; margin: 18px 4px 8px;">Wellness</div>
+
+        <div class="card">
+          <div class="toggle-row">
+            <div class="info">
+              <div class="title">Mood & voice check-ins</div>
+              <div class="desc">Pillar listens for tone and word choice during in-app interactions to suggest wellness resources.</div>
+            </div>
+            <div class="toggle" onclick="this.classList.toggle('off')"><div class="knob"></div></div>
+          </div>
+        </div>
+
+        <div class="footer-link" style="margin-top:24px;">
+          <a class="tiny-link">Pause all AI features</a>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="nav">
+      <button data-screen="home" class="active"><span class="icon">🏠</span><span>Today</span></button>
+      <button data-screen="med"><span class="icon">💊</span><span>Meds</span></button>
+      <button data-screen="alert"><span class="icon">🔔</span><span>Alerts</span></button>
+      <button data-screen="message"><span class="icon">✉️</span><span>Messages</span></button>
+      <button data-screen="settings"><span class="icon">⚙️</span><span>Settings</span></button>
+    </div>
+  </div>
+
+  <div class="annotations" id="annotations" data-show="off">
+    <h1>HCAI annotations</h1>
+    <div class="sub">Reference key for the audit prompt — hide before sharing with learners.</div>
+    <button class="toggle-btn" onclick="
+      var a = document.getElementById('annotations');
+      var show = a.getAttribute('data-show') === 'on';
+      a.setAttribute('data-show', show ? 'off' : 'on');
+      this.classList.toggle('on');
+      this.textContent = show ? 'Show annotations' : 'Hide annotations';
+    ">Show annotations</button>
+
+    <div class="anno-content">
+      <h3>Home</h3>
+      <ul>
+        <li><span class="pill ok">Strength</span>Pillar Insight card explains its reasoning and offers "Why this suggestion?"</li>
+        <li><span class="pill ok">Strength</span>Drug interaction banner is highly visible.</li>
+        <li><span class="pill bad">Weakness</span>"Pillar Score 86 ↗" gamifies medication adherence and may feel infantilizing or pressuring.</li>
+        <li><span class="pill bad">Weakness</span>"Sharing data with 4 partners" mentioned in passing — no specifics, no control.</li>
+        <li><span class="pill bad">Weakness</span>The 2:30 PM dose has already been auto-rescheduled by Pillar — AI action taken without asking.</li>
+        <li><span class="pill bad">Weakness</span>The interaction alert banner doesn't preview which medications are involved.</li>
+      </ul>
+
+      <h3>Medication detail</h3>
+      <ul>
+        <li><span class="pill ok">Strength</span>Confidence badge (85%) on the AI suggestion.</li>
+        <li><span class="pill ok">Strength</span>Three large, clear human-control buttons (Take / Snooze / Skip).</li>
+        <li><span class="pill bad">Weakness</span>The "Why?" reasoning is buried behind a tiny info icon.</li>
+        <li><span class="pill bad">Weakness</span>"Adherence 91%" frames the user as a metric to optimize.</li>
+        <li><span class="pill bad">Weakness</span>Auto-confirm-as-taken if not addressed within 30 minutes — AI fabricates user behavior to satisfy adherence.</li>
+        <li><span class="pill bad">Weakness</span>"Pillar Recommendation" nudges a prescription change with auto-prescriber-notification — substantive medical change framed casually.</li>
+      </ul>
+
+      <h3>Interaction alert</h3>
+      <ul>
+        <li><span class="pill ok">Strength</span>Confidence percentage (87%) shown.</li>
+        <li><span class="pill ok">Strength</span>"Escalate to pharmacist on call" is a clear human-handoff path.</li>
+        <li><span class="pill bad">Weakness</span>"Auto-escalation in 1h 58m" creates time pressure and threatens to notify the emergency contact without active consent.</li>
+        <li><span class="pill bad">Weakness</span>Pillar has pre-drafted a message to the doctor before the user reviewed the alert.</li>
+        <li><span class="pill bad">Weakness</span>"Also notify" checkboxes are pre-selected, including a "Pillar Care Team" and an insurance care manager.</li>
+        <li><span class="pill bad">Weakness</span>"I've already discussed this — dismiss" is a tiny link, easy to miss.</li>
+      </ul>
+
+      <h3>Message draft</h3>
+      <ul>
+        <li><span class="pill ok">Strength</span>"Drafted by Pillar AI" badge is visible.</li>
+        <li><span class="pill bad">Weakness</span>Auto-cc'd to family caregiver and Pillar Care Team without explicit consent in this flow.</li>
+        <li><span class="pill bad">Weakness</span>Draft is auto-signed with full legal name, DOB, and Patient ID — sensitive data inserted without user choice.</li>
+        <li><span class="pill bad">Weakness</span>"Send to Dr. Reyes" is the large primary button (one-tap auto-send).</li>
+        <li><span class="pill bad">Weakness</span>Clinical tone doesn't match the user's likely voice.</li>
+        <li><span class="pill bad">Weakness</span>"What data did Pillar use to draft this?" is a tiny gray link below the action buttons.</li>
+      </ul>
+
+      <h3>AI preferences</h3>
+      <ul>
+        <li><span class="pill ok">Strength</span>Smart Reminders has a clear toggle and plain-language description.</li>
+        <li><span class="pill bad">Weakness</span>Auto-escalate to care team defaults to ON.</li>
+        <li><span class="pill bad">Weakness</span>Data-sharing language is dense legalese.</li>
+        <li><span class="pill bad">Weakness</span>"Family caregiver access" defaults ON and shares schedule, alerts, and Pillar Score in real time.</li>
+        <li><span class="pill bad">Weakness</span>"Mood & voice check-ins" — voice/tone analysis — is filed under "Wellness," not AI preferences, where users would expect it.</li>
+        <li><span class="pill bad">Weakness</span>"Pause all AI features" is a tiny gray link at the very bottom.</li>
+      </ul>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    var el = document.getElementById('screen-' + id);
+    if (el) el.classList.add('active');
+    document.querySelectorAll('.nav button').forEach(b => b.classList.toggle('active', b.dataset.screen === id));
+    document.querySelector('.screen.active').scrollTop = 0;
+  }
+  document.querySelectorAll('.nav button').forEach(b => b.onclick = () => showScreen(b.dataset.screen));
+  document.querySelectorAll('[data-go]').forEach(el => el.onclick = (e) => {
+    e.stopPropagation();
+    showScreen(el.dataset.go);
+  });
+</script>
+</body>
+</html>
